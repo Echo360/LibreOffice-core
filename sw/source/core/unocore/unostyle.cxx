@@ -1614,16 +1614,10 @@ const SwPageDesc& SwStyleBase_Impl::GetOldPageDesc()
 {
     if(!pOldPageDesc)
     {
-        const sal_uInt16 nPDescCount = rDoc.GetPageDescCnt();
-        for(sal_uInt16 i = 0; i < nPDescCount; ++i)
-        {
-            const SwPageDesc& rDesc = rDoc.GetPageDesc( i );
-            if(rDesc.GetName() == rStyleName)
-            {
-                pOldPageDesc = & rDesc;
-                break;
-            }
-        }
+        SwPageDesc *pd = rDoc.FindPageDescByName( rStyleName );
+        if( pd )
+            pOldPageDesc = pd;
+
         if(!pOldPageDesc)
         {
             for(sal_uInt16 i = RC_POOLPAGEDESC_BEGIN; i <= STR_POOLPAGE_LANDSCAPE; ++i)

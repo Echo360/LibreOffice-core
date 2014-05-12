@@ -1923,17 +1923,6 @@ SwGrfFmtColl* SwDoc::CopyGrfColl( const SwGrfFmtColl& rColl )
     return pNewColl;
 }
 
-static SwPageDesc* lcl_FindPageDesc( const SwPageDescs& rArr, const OUString& rName )
-{
-    for( sal_uInt16 n = rArr.size(); n; )
-    {
-        SwPageDesc* pDesc = rArr[ --n ];
-        if( pDesc->GetName() == rName )
-            return pDesc;
-    }
-    return 0;
-}
-
 void SwDoc::CopyFmtArr( const SwFmtsBase& rSourceArr,
                         SwFmtsBase& rDestArr,
                         FNCopyFmt fnCopyFmt,
@@ -1978,12 +1967,13 @@ void SwDoc::CopyFmtArr( const SwFmtsBase& rSourceArr,
             ((SwFmtPageDesc*)pItem)->GetPageDesc() )
         {
             SwFmtPageDesc aPageDesc( *(SwFmtPageDesc*)pItem );
-            const OUString& rNm = aPageDesc.GetPageDesc()->GetName();
-            SwPageDesc* pPageDesc = ::lcl_FindPageDesc( maPageDescs, rNm );
-            if( !pPageDesc )
-            {
-                pPageDesc = maPageDescs[ MakePageDesc( rNm ) ];
-            }
+            SwPageDesc *sPageDesc = aPageDesc.GetPageDesc();;
+            SwPageDescs::const_iterator it = maPageDescs.find( sPageDesc );
+            SwPageDesc *pPageDesc;
+            if( it == maPageDescs.end() )
+                pPageDesc = maPageDescs[ MakePageDesc( sPageDesc->GetName() ) ];
+            else
+                pPageDesc = const_cast<SwPageDesc*>( *it );
             aPageDesc.RegisterToPageDesc( *pPageDesc );
             SwAttrSet aTmpAttrSet( pSrc->GetAttrSet() );
             aTmpAttrSet.Put( aPageDesc );
@@ -2106,15 +2096,17 @@ void SwDoc::CopyPageDesc( const SwPageDesc& rSrcDesc, SwPageDesc& rDstDesc,
 
     if( rSrcDesc.GetFollow() != &rSrcDesc )
     {
-        SwPageDesc* pFollow = ::lcl_FindPageDesc( maPageDescs,
-                                    rSrcDesc.GetFollow()->GetName() );
-        if( !pFollow )
+        const SwPageDesc* sFollow = rSrcDesc.GetFollow();
+        SwPageDescs::const_iterator it = maPageDescs.find( const_cast<SwPageDesc*>( sFollow ) );
+        SwPageDesc* pFollow;
+        if( it == maPageDescs.end() )
         {
             // copy
-            sal_uInt16 nPos = MakePageDesc( rSrcDesc.GetFollow()->GetName() );
-            pFollow = maPageDescs[ nPos ];
+            pFollow = maPageDescs[ MakePageDesc( rSrcDesc.GetFollow()->GetName() ) ];
             CopyPageDesc( *rSrcDesc.GetFollow(), *pFollow );
         }
+        else
+            pFollow = *it;
         rDstDesc.SetFollow( pFollow );
         bNotifyLayout = true;
     }
@@ -2223,7 +2215,7 @@ void SwDoc::ReplaceStyles( const SwDoc& rSource, bool bIncludePageStyles )
             while( nCnt )
             {
                 SwPageDesc *pSrc = rSource.maPageDescs[ --nCnt ];
-                if( 0 == ::lcl_FindPageDesc( maPageDescs, pSrc->GetName() ) )
+                if( maPageDescs.end() == maPageDescs.find( pSrc ) )
                     MakePageDesc( pSrc->GetName() );
             }
 
@@ -2231,7 +2223,7 @@ void SwDoc::ReplaceStyles( const SwDoc& rSource, bool bIncludePageStyles )
             for( nCnt = rSource.maPageDescs.size(); nCnt; )
             {
                 SwPageDesc *pSrc = rSource.maPageDescs[ --nCnt ];
-                CopyPageDesc( *pSrc, *::lcl_FindPageDesc( maPageDescs, pSrc->GetName() ));
+                CopyPageDesc( *pSrc, **(maPageDescs.find( pSrc->GetName()) ));
             }
         }
     }

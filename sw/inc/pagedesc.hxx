@@ -30,6 +30,7 @@
 class SfxPoolItem;
 class SwTxtFmtColl;
 class SwNode;
+class SwPageDescs;
 
 /// Separator line adjustment.
 enum SwFtnAdj
@@ -130,6 +131,9 @@ namespace nsUseOnPage
 class SW_DLLPUBLIC SwPageDesc : public SwModify
 {
     friend class SwDoc;
+    // How to define the friend functions _erase and insert
+    // to update the list member
+    friend class SwPageDescs;
 
     OUString    aDescName;
     SvxNumberType   aNumType;
@@ -149,20 +153,24 @@ class SW_DLLPUBLIC SwPageDesc : public SwModify
     /// Footnote information.
     SwPageFtnInfo aFtnInfo;
 
+    // The assigned list.
+    SwPageDescs *list;
+
     /** Called for mirroring of Chg (doc).
        No adjustment at any other place. */
     SAL_DLLPRIVATE void Mirror();
 
     SAL_DLLPRIVATE void ResetAllAttr( bool bLeft );
 
-    SAL_DLLPRIVATE SwPageDesc(const OUString&, SwFrmFmt*, SwDoc *pDc );
+    SAL_DLLPRIVATE SwPageDesc( const OUString&, SwFrmFmt*, SwDoc *pDc );
 
 protected:
    virtual void Modify( const SfxPoolItem* pOld, const SfxPoolItem *pNewValue ) SAL_OVERRIDE;
 
 public:
     OUString GetName() const { return aDescName; }
-    void SetName( const OUString& rNewName ) { aDescName = rNewName; }
+    // only called in sw/source/core/uibase/app/docstyle.cxx
+    void SetName( const OUString& rNewName );
 
     bool GetLandscape() const { return bLandscape; }
     void SetLandscape( bool bNew ) { bLandscape = bNew; }
@@ -336,6 +344,50 @@ public:
     OUString GetName() const;
 
     operator SwPageDesc() const; // #i7983#
+};
+
+typedef std::vector<SwPageDesc*> SwPageDescsBase;
+
+// PageDescriptor-interface, Array because of inlines.
+// Mimics o3tl::sorted_vector interface
+class SwPageDescs : private SwPageDescsBase
+{
+public:
+    typedef typename SwPageDescsBase::const_iterator const_iterator;
+    typedef typename SwPageDescsBase::size_type size_type;
+    typedef typename SwPageDescsBase::value_type value_type;
+
+    // the destructor will free all objects still in the vector
+    ~SwPageDescs();
+
+    void DeleteAndDestroyAll();
+
+    using SwPageDescsBase::clear;
+    using SwPageDescsBase::empty;
+    using SwPageDescsBase::size;
+
+    std::pair<const_iterator,bool> insert( const value_type& x );
+    size_type erase( const value_type& x );
+    void erase( size_type index );
+    void erase( const_iterator const& position );
+
+    const value_type& front() const { return SwPageDescsBase::front(); }
+    const value_type& back() const { return SwPageDescsBase::back(); }
+    const value_type& operator[]( size_t index ) const
+        { return SwPageDescsBase::operator[]( index ); }
+
+    const_iterator find( const OUString &name ) const;
+    const_iterator find( const value_type& x ) const;
+
+    const_iterator begin() const { return SwPageDescsBase::begin(); }
+    const_iterator end() const { return SwPageDescsBase::end(); }
+
+    bool Contains( const value_type& x ) const;
+
+private:
+    typedef typename SwPageDescsBase::iterator iterator;
+    iterator begin_nonconst() { return SwPageDescsBase::begin(); }
+    iterator end_nonconst() { return SwPageDescsBase::end(); }
 };
 
 #endif // INCLUDED_SW_INC_PAGEDESC_HXX

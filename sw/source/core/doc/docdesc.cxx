@@ -617,7 +617,9 @@ sal_uInt16 SwDoc::MakePageDesc( const OUString &rName, const SwPageDesc *pCpy,
         pNew->GetFirstMaster().SetFmtAttr( SvxFrameDirectionItem(aFrameDirection, RES_FRAMEDIR) );
         pNew->GetFirstLeft().SetFmtAttr( SvxFrameDirectionItem(aFrameDirection, RES_FRAMEDIR) );
     }
-    maPageDescs.push_back( pNew );
+
+    std::pair<SwPageDescs::const_iterator, bool> res = maPageDescs.insert( pNew );
+    SAL_WARN_IF(res.second == false, "sw", "MakePageDesc called with existing name" );
 
     if (bBroadcast)
         BroadcastStyleOperation(rName, SFX_STYLE_FAMILY_PAGE,
@@ -630,22 +632,6 @@ sal_uInt16 SwDoc::MakePageDesc( const OUString &rName, const SwPageDesc *pCpy,
 
     SetModified();
     return (maPageDescs.size()-1);
-}
-
-SwPageDesc* SwDoc::FindPageDescByName( const OUString& rName, sal_uInt16* pPos ) const
-{
-    SwPageDesc* pRet = 0;
-    if( pPos ) *pPos = USHRT_MAX;
-
-    for( sal_uInt16 n = 0, nEnd = maPageDescs.size(); n < nEnd; ++n )
-        if( maPageDescs[ n ]->GetName() == rName )
-        {
-            pRet = maPageDescs[ n ];
-            if( pPos )
-                *pPos = n;
-            break;
-        }
-    return pRet;
 }
 
 // We collect the GlobalNames of the servers at runtime, who don't want to be notified
@@ -774,40 +760,35 @@ IMPL_LINK( SwDoc, DoUpdateModifiedOLE, Timer *, )
     return 0;
 }
 
-bool SwDoc::FindPageDesc( const OUString & rName, sal_uInt16 * pFound)
+static SwPageDesc* lcl_FindPageDescByName( SwPageDescs *maPageDescs, const OUString & rName, sal_uInt16* pPos )
 {
-    bool bResult = false;
-    sal_uInt16 nI;
-    for (nI = 0; nI < maPageDescs.size(); nI++)
-    {
-        if (maPageDescs[nI]->GetName() == rName)
-        {
-            *pFound = nI;
-            bResult = true;
-            break;
-        }
+    SwPageDescs::const_iterator it = maPageDescs->find( rName );
+    SwPageDesc* res = NULL;
+    if (it != maPageDescs->end() ) {
+        res = const_cast <SwPageDesc *>( *it );
+        if( pPos )
+            *pPos = std::distance( maPageDescs->begin(), it );
     }
-
-    return bResult;
+    else if( pPos )
+        *pPos = USHRT_MAX;
+    return res;
 }
 
-SwPageDesc * SwDoc::GetPageDesc( const OUString & rName )
+SwPageDesc* SwDoc::FindPageDescByName( const OUString & rName, sal_uInt16* pPos )
 {
-    SwPageDesc * aResult = NULL;
+    return lcl_FindPageDescByName( &maPageDescs, rName, pPos );
+}
 
-    sal_uInt16 nI;
-
-    if (FindPageDesc(rName, &nI))
-        aResult = maPageDescs[nI];
-
-    return aResult;
+SwPageDesc* SwDoc::FindPageDescByName( const OUString & rName, sal_uInt16* pPos ) const
+{
+    return lcl_FindPageDescByName( const_cast <SwPageDescs *>( &maPageDescs ), rName, pPos );
 }
 
 void SwDoc::DelPageDesc( const OUString & rName, bool bBroadcast )
 {
     sal_uInt16 nI;
 
-    if (FindPageDesc(rName, &nI))
+    if (FindPageDescByName(rName, &nI))
         DelPageDesc(nI, bBroadcast);
 }
 
@@ -815,7 +796,7 @@ void SwDoc::ChgPageDesc( const OUString & rName, const SwPageDesc & rDesc)
 {
     sal_uInt16 nI;
 
-    if (FindPageDesc(rName, &nI))
+    if (FindPageDescByName(rName, &nI))
         ChgPageDesc(nI, rDesc);
 }
 
