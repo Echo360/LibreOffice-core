@@ -1971,7 +1971,7 @@ void SwDoc::CopyFmtArr( const SwFmtsBase& rSourceArr,
             SwPageDescs::const_iterator it = maPageDescs.find( sPageDesc );
             SwPageDesc *pPageDesc;
             if( it == maPageDescs.end() )
-                pPageDesc = maPageDescs[ MakePageDesc( sPageDesc->GetName() ) ];
+                pPageDesc = MakePageDesc( sPageDesc->GetName() );
             else
                 pPageDesc = const_cast<SwPageDesc*>( *it );
             aPageDesc.RegisterToPageDesc( *pPageDesc );
@@ -2102,7 +2102,7 @@ void SwDoc::CopyPageDesc( const SwPageDesc& rSrcDesc, SwPageDesc& rDstDesc,
         if( it == maPageDescs.end() )
         {
             // copy
-            pFollow = maPageDescs[ MakePageDesc( rSrcDesc.GetFollow()->GetName() ) ];
+            pFollow = MakePageDesc( sFollow->GetName() );
             CopyPageDesc( *rSrcDesc.GetFollow(), *pFollow );
         }
         else

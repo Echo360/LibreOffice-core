@@ -712,8 +712,7 @@ void SwDoc::ClearDoc()
     InitTOXTypes();
 
     // create a dummy pagedesc for the layout
-    sal_uInt16 nDummyPgDsc = MakePageDesc(OUString("?DUMMY?"));
-    SwPageDesc* pDummyPgDsc = maPageDescs[ nDummyPgDsc ];
+    SwPageDesc* pDummyPgDsc = MakePageDesc(OUString("?DUMMY?"));
 
     SwNodeIndex aSttIdx( *GetNodes().GetEndOfContent().StartOfSectionNode(), 1 );
     // create the first one over and over again (without attributes/style etc.
@@ -762,7 +761,7 @@ void SwDoc::ClearDoc()
     mpOutlineRule->SetCountPhantoms( !GetDocumentSettingManager().get(IDocumentSettingAccess::OLD_NUMBERING) );
 
     // remove the dummy pagedec from the array and delete all the old ones
-    maPageDescs.erase( maPageDescs.begin() + nDummyPgDsc );
+    maPageDescs.erase( pDummyPgDsc );
     maPageDescs.DeleteAndDestroyAll();
 
     // Delete for Collections
@@ -800,12 +799,12 @@ void SwDoc::ClearDoc()
 
     GetPageDescFromPool( RES_POOLPAGE_STANDARD );
     pFirstNd->ChgFmtColl( GetTxtCollFromPool( RES_POOLCOLL_STANDARD ));
-    nDummyPgDsc = maPageDescs.size();
-    maPageDescs.insert( pDummyPgDsc );
+    std::pair<SwPageDescs::const_iterator, bool> res = maPageDescs.insert( pDummyPgDsc );
+    SAL_WARN_IF(res.second == false, "sw", "ClearDoc: inserted already existing PageDesc" );
     // set the layout back to the new standard pagedesc
     pFirstNd->ResetAllAttr();
     // delete now the dummy pagedesc
-    DelPageDesc( nDummyPgDsc );
+    DelPageDesc( std::distance( maPageDescs.begin(), res.first) );
 }
 
 void SwDoc::SetPreviewPrtData( const SwPagePreviewPrtData* pNew )
