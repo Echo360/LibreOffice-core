@@ -480,12 +480,10 @@ void RtfExport::WritePageDescTable()
         OutPageDescription(rPageDesc, false, false);
 
         // search for the next page description
-        sal_uInt16 i = nSize;
-        while (i)
-            if (rPageDesc.GetFollow() == &pDoc->GetPageDesc(--i))
-                break;
+        sal_uInt16 nPos;
+        pDoc->FindPageDescByName(rPageDesc.GetFollow()->GetName(), &nPos);
         Strm().WriteCharPtr(OOO_STRING_SVTOOLS_RTF_PGDSCNXT);
-        OutULong(i).WriteChar(' ');
+        OutULong( nPos ).WriteChar(' ');
         Strm().WriteCharPtr(msfilter::rtfutil::OutString(rPageDesc.GetName(), eDefaultEncoding).getStr()).WriteCharPtr(";}");
     }
     Strm().WriteChar('}').WriteCharPtr(SAL_NEWLINE_STRING);

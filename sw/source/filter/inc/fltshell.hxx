@@ -537,7 +537,6 @@ class SwFltShell
     SwPaM* pPaM;
 
     OUString sBaseURL;
-    sal_uInt16 nPageDescOffset; // fuers update der pagedescs
     rtl_TextEncoding eSrcCharSet; // charset der quelle
     friend class SwFltControlStack;
     bool bNewDoc;
@@ -690,8 +689,6 @@ public:
 
     const OUString& GetBaseURL() const { return sBaseURL; }
 };
-
-SW_DLLPUBLIC void UpdatePageDescs(SwDoc &rDoc, sal_uInt16 nInPageDescOffset);
 
 #endif
 

@@ -1017,7 +1017,6 @@ SwFltShell::SwFltShell(SwDoc* pDoc, SwPaM& rPaM, const OUString& rBaseURL, bool 
     aEndStack(pDoc, nFieldFl),
     pPaM(new SwPaM(*(rPaM.GetPoint()))),
     sBaseURL(rBaseURL),
-    nPageDescOffset(GetDoc().GetPageDescCnt()),
     eSrcCharSet(RTL_TEXTENCODING_MS_1252),
     bNewDoc(bNew),
     bStdPD(false),
@@ -1055,8 +1054,6 @@ SwFltShell::SwFltShell(SwDoc* pDoc, SwPaM& rPaM, const OUString& rBaseURL, bool 
 
 SwFltShell::~SwFltShell()
 {
-    sal_uInt16 i;
-
     if (eSubMode == Style)
         EndStyle();
     if( pOutDoc->IsInTable() )          // if not properly terminated
@@ -1070,9 +1067,10 @@ SwFltShell::~SwFltShell()
     aStack.SetAttr(*pPaM->GetPoint(), 0, false);
     aEndStack.SetAttr(*pPaM->GetPoint(), 0, false);
     aEndStack.SetAttr(*pPaM->GetPoint(), 0, false);
+
+    SwDoc& rDoc = GetDoc();
     if( bProtect ){     // The entire document is supposed to be protected
 
-        SwDoc& rDoc = GetDoc();
                         // 1. Create SectionFmt and Section
         SwSectionFmt* pSFmt = rDoc.MakeSectionFmt( 0 );
         SwSectionData aSectionData(CONTENT_SECTION, OUString("PMW-Protect"));
@@ -1093,15 +1091,13 @@ SwFltShell::~SwFltShell()
                 pDocSh->SetReadOnlyUI( true );
         }
     }
-        // Update document page descriptors (only this way also left
-        // pages get adjusted)
 
-    GetDoc().ChgPageDesc( 0, GetDoc().GetPageDesc( 0 ));    // PageDesc "Standard"
-    for (i=nPageDescOffset;i<GetDoc().GetPageDescCnt();i++)
-    {
-        const SwPageDesc& rPD = GetDoc().GetPageDesc(i);
-        GetDoc().ChgPageDesc(i, rPD);
-    }
+    sal_uInt16 i;
+
+    // Update document page descriptors (only this way also left
+    // pages get adjusted)
+    for (i = 0 ; i < rDoc.GetPageDescCnt(); i++)
+        GetDoc().ChgPageDescP( rDoc.GetPageDesc(i) );
 
     delete pPaM;
     for (i=0; i<sizeof(pColls)/sizeof(*pColls); i++)
@@ -2130,21 +2126,6 @@ void SwFltShell::NextStyle(sal_uInt16 nWhich, sal_uInt16 nNext)
         if( pColls[nWhich] && pColls[nNext] )
             pColls[nWhich]->GetColl()->SetNextTxtFmtColl(
                  *pColls[nNext]->GetColl() );
-}
-
-// UpdatePageDescs needs to be called at end of parsing to make Writer actually
-// accept Pagedescs contents
-void UpdatePageDescs(SwDoc &rDoc, sal_uInt16 nInPageDescOffset)
-{
-    // Update document page descriptors (only this way also left pages
-    // get adjusted)
-
-    // PageDesc "Standard"
-    rDoc.ChgPageDesc(0, rDoc.GetPageDesc(0));
-
-    // PageDescs "Convert..."
-    for (sal_uInt16 i = nInPageDescOffset; i < rDoc.GetPageDescCnt(); ++i)
-        rDoc.ChgPageDesc(i, rDoc.GetPageDesc(i));
 }
 
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */

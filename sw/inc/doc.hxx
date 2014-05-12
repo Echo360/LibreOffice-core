@@ -1169,6 +1169,9 @@ public:
                                     sal_uInt16* pPos = 0 ) const;
     SwPageDesc* FindPageDescByName( const OUString& rName,
                                     sal_uInt16* pPos = 0 );
+    SwPageDesc* FindPageDescByPoolId( sal_uInt16 nPoolId );
+    bool ContainsPageDesc( const SwPageDesc* ) const;
+    bool ContainsPageDesc( const SwPageDesc& ) const;
 
     /** Copy the complete PageDesc - beyond document and "deep"!
      Optionally copying of PoolFmtId, -HlpId can be prevented. */
@@ -1186,8 +1189,10 @@ public:
         { CopyPageDescHeaderFooterImpl( false, rSrcFmt, rDestFmt ); }
 
     // For Reader
+    void ChgPageDescP( const SwPageDesc &, SwPageDesc *pDesc = NULL );
     void ChgPageDesc( const OUString & rName, const SwPageDesc& );
     void ChgPageDesc( sal_uInt16 i, const SwPageDesc& );
+    void DelPageDescP( SwPageDesc *pDel, bool bBroadcast = false );
     void DelPageDesc( const OUString & rName, bool bBroadcast = false);
     void DelPageDesc( sal_uInt16 i, bool bBroadcast = false );
     void PreDelPageDesc(SwPageDesc * pDel);

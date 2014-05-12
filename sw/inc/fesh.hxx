@@ -553,11 +553,11 @@ public:
     sal_uInt16 GetMousePageDesc( const Point &rPt ) const;
     sal_uInt16 GetPageDescCnt() const;
     SwPageDesc* FindPageDescByName( const OUString& rName,
-                                    bool bGetFromPool = false,
-                                    sal_uInt16* pPos = 0 );
+                                    bool bGetFromPool = false );
 
     const SwPageDesc& GetPageDesc( sal_uInt16 i ) const;
     void  ChgPageDesc( sal_uInt16 i, const SwPageDesc& );
+    void  ChgPageDescP( const SwPageDesc&, SwPageDesc* = NULL );
     /** if inside all selection only one PageDesc, @return this.
      Otherwise @return 0 pointer */
     const SwPageDesc* GetSelectedPageDescs() const;
