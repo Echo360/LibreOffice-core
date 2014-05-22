@@ -1063,16 +1063,4 @@ void SwDoc::Paste( const SwDoc& rSource )
     UpdateFlds(NULL, false);
 }
 
-sal_uInt16 SwTxtFmtColls::GetPos(const SwTxtFmtColl* p) const
-{
-    const_iterator it = std::find(begin(), end(), p);
-    return it == end() ? USHRT_MAX : it - begin();
-}
-
-sal_uInt16 SwGrfFmtColls::GetPos(const SwGrfFmtColl* p) const
-{
-    const_iterator it = std::find(begin(), end(), p);
-    return it == end() ? USHRT_MAX : it - begin();
-}
-
 /* vim:set shiftwidth=4 softtabstop=4 expandtab: */
