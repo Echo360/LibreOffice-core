@@ -1212,6 +1212,7 @@ void ScFormulaCell::CompileXML( sc::CompileFormulaContext& rCxt, ScProgress& rPr
                 SetCellGroup( xGroup );
 
                 bSkipCompile = true;
+                pCode = pPreviousCell->pCode;
 
                 SAL_INFO( "sc", "merged '" << aFormula << "' == "
                           "'" << aShouldBe << "'" <<
