@@ -195,14 +195,6 @@ awt::Size SAL_CALL OGLPlayer::getPreferredPlayerWindowSize() throw ( uno::Runtim
     return awt::Size( 480, 360 );
 }
 
-static void lcl_ReleaseFiles(glTFHandle* pHandle)
-{
-    for( int i = 0; i < pHandle->size; ++i )
-    {
-        delete [] pHandle->files[i].buffer;
-    }
-}
-
 uno::Reference< media::XPlayerWindow > SAL_CALL OGLPlayer::createPlayerWindow( const uno::Sequence< uno::Any >& rArguments )
      throw ( uno::RuntimeException, std::exception )
 {
@@ -227,7 +219,6 @@ uno::Reference< media::XPlayerWindow > SAL_CALL OGLPlayer::createPlayerWindow( c
     m_pHandle->viewport.width = aSize.Width();
     m_pHandle->viewport.height = aSize.Height();
     gltf_renderer_set_content(m_pHandle);
-    lcl_ReleaseFiles(m_pHandle);
     m_pOGLWindow = new OGLWindow(m_pHandle, &m_aContext, pChildWindow);
     return uno::Reference< media::XPlayerWindow >( m_pOGLWindow );
 }
@@ -248,7 +239,6 @@ uno::Reference< media::XFrameGrabber > SAL_CALL OGLPlayer::createFrameGrabber()
     m_pHandle->viewport.width = getPreferredPlayerWindowSize().Width;
     m_pHandle->viewport.height = getPreferredPlayerWindowSize().Height;
     gltf_renderer_set_content(m_pHandle);
-    lcl_ReleaseFiles(m_pHandle);
     return uno::Reference< media::XFrameGrabber >();
     OGLFrameGrabber *pFrameGrabber = new OGLFrameGrabber( m_pHandle );
     return uno::Reference< media::XFrameGrabber >( pFrameGrabber );
