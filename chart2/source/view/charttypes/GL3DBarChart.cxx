@@ -315,7 +315,6 @@ void GL3DBarChart::clickedAt(const Point& /*rPos*/, sal_uInt16 nButtons)
     if(nButtons != MOUSE_LEFT)
         return;
 
-    mbBlockUserInput = true;
     sal_uInt32 nId = 5;
     /*
     {
@@ -330,6 +329,8 @@ void GL3DBarChart::clickedAt(const Point& /*rPos*/, sal_uInt16 nButtons)
 
     if(itr == maBarMap.end())
         return;
+
+    mbBlockUserInput = true;
 
     const BarInformation& rBarInfo = itr->second;
     mnStepsTotal = 100;
