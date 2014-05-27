@@ -1659,10 +1659,12 @@ void OpenGL3DRenderer::SetPickingMode(bool bPickingMode)
     if(mbPickingMode)
     {
         glBindFramebuffer(GL_FRAMEBUFFER, mnPickingFbo);
+        glDisable(GL_MULTISAMPLE);
     }
     else
     {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glEnable(GL_MULTISAMPLE);
     }
 }
 
