@@ -7,15 +7,18 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#include <config_folders.h>
+
 #include "oglplayer.hxx"
 #include "oglframegrabber.hxx"
 #include "oglwindow.hxx"
 
 #include <cppuhelper/supportsservice.hxx>
+#include <rtl/bootstrap.hxx>
 #include <tools/stream.hxx>
+#include <tools/urlobj.hxx>
 #include <vcl/graph.hxx>
 #include <vcl/graphicfilter.hxx>
-#include <tools/urlobj.hxx>
 #include <vcl/opengl/OpenGLHelper.hxx>
 
 using namespace com::sun::star;
@@ -33,21 +36,30 @@ OGLPlayer::~OGLPlayer()
     gltf_renderer_release(m_pHandle);
 }
 
-static bool lcl_LoadFile( glTFFile* io_pFile, const OUString& rURL)
+static int lcl_LoadFileContent(const OUString& rURL, char** pBuffer)
 {
+    *pBuffer = NULL;
+
     SvFileStream aStream( rURL, STREAM_READ );
     if( !aStream.IsOpen() )
-        return false;
+    {
+        SAL_WARN("avmedia.opengl", "Failed to open: " << rURL);
+        return -1;
+    }
 
     const sal_Int64 nBytes = aStream.remainingSize();
-    char* pBuffer = new char[nBytes];
-    aStream.Read( pBuffer, nBytes );
+    *pBuffer = new char[nBytes];
+    aStream.Read(*pBuffer, nBytes);
     aStream.Close();
 
-    io_pFile->buffer = pBuffer;
-    io_pFile->size = nBytes;
+    return nBytes;
+}
 
-    return true;
+static bool lcl_LoadFile(glTFFile* io_pFile, const OUString& rURL)
+{
+    io_pFile->size = lcl_LoadFileContent(rURL, &io_pFile->buffer);
+
+    return io_pFile->size > 0;
 }
 
 bool OGLPlayer::create( const OUString& rURL )
@@ -220,6 +232,19 @@ uno::Reference< media::XPlayerWindow > SAL_CALL OGLPlayer::createPlayerWindow( c
     m_pHandle->viewport.width = aSize.Width();
     m_pHandle->viewport.height = aSize.Height();
     gltf_renderer_set_content(m_pHandle);
+
+    // initialize the FPS counter
+    OUString aFontPath("$BRAND_BASE_DIR/" LIBO_SHARE_FOLDER "/fonts/truetype/DejaVuSans.ttf");
+    rtl::Bootstrap::expandMacros(aFontPath);
+
+    char *pFontFile = NULL;
+    int nFontFileSize = lcl_LoadFileContent(aFontPath, &pFontFile);
+    if (nFontFileSize > 0)
+    {
+        gltf_render_FPS_initialize(m_pHandle, reinterpret_cast<unsigned char*>(pFontFile), nFontFileSize);
+        delete [] pFontFile;
+    }
+
     m_pOGLWindow = new OGLWindow(m_pHandle, &m_aContext, pChildWindow);
     return uno::Reference< media::XPlayerWindow >( m_pOGLWindow );
 }
