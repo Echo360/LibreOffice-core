@@ -18,7 +18,6 @@ $(eval $(call gb_UnpackedTarball_set_patchlevel,libgltf,1))
 $(eval $(call gb_UnpackedTarball_add_patches,libgltf,\
 	external/libgltf/patches/include_path_glew.patch \
 	external/libgltf/patches/include_path_freetype.patch \
-	external/libgltf/patches/free_file_buffers.patch \
 	external/libgltf/patches/rgba_textures.patch \
 ))
 
