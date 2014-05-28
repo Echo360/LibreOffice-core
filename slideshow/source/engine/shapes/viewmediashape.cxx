@@ -194,17 +194,17 @@ namespace slideshow
             if( !pCanvas )
                 return false;
 
-            if( !mpMediaWindow.get() && !mxPlayerWindow.is() )
+            OUString sURL;
+            OUString sMimeType;
+            uno::Reference< beans::XPropertySet > xPropSet( mxShape, uno::UNO_QUERY );
+            if (xPropSet.is())
             {
-                OUString sURL;
-                OUString sMimeType;
-                uno::Reference< beans::XPropertySet > xPropSet( mxShape, uno::UNO_QUERY );
-                if (xPropSet.is())
-                {
-                    xPropSet->getPropertyValue("PrivateTempFileURL") >>= sURL;
-                    xPropSet->getPropertyValue("MediaMimeType") >>= sMimeType;
-                }
+                xPropSet->getPropertyValue("PrivateTempFileURL") >>= sURL;
+                xPropSet->getPropertyValue("MediaMimeType") >>= sMimeType;
+            }
 
+            if (sMimeType != "application/vnd.gltf+json" && !mpMediaWindow.get() && !mxPlayerWindow.is())
+            {
                 const Graphic aGraphic(avmedia::MediaWindow::grabFrame(sURL,"",sMimeType));
                 const BitmapEx aBmp = aGraphic.GetBitmapEx();
 
