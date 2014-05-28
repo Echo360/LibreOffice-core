@@ -1711,8 +1711,10 @@ void OpenGL3DRenderer::ProcessUnrenderedShape()
     //Polygon
     RenderPolygon3DObject();
     //Shape3DExtrudeObject
-    RenderBatchBars();
-//    RenderExtrude3DObject();
+    if(mbPickingMode)
+        RenderExtrude3DObject();
+    else
+        RenderBatchBars();
     //render text
     RenderTextShape();
     // render screen text
