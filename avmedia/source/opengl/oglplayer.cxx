@@ -33,6 +33,7 @@ OGLPlayer::OGLPlayer()
 
 OGLPlayer::~OGLPlayer()
 {
+    osl::MutexGuard aGuard(m_aMutex);
     for (size_t i = 0; i < m_pHandle->size; ++i)
     {
         if (m_pHandle->files[i].type != GLTF_JSON)
@@ -71,6 +72,8 @@ static bool lcl_LoadFile(glTFFile* io_pFile, const OUString& rURL)
 
 bool OGLPlayer::create( const OUString& rURL )
 {
+    osl::MutexGuard aGuard(m_aMutex);
+
     m_sURL = rURL;
 
     // Load *.json file and init renderer
@@ -311,8 +314,8 @@ IMPL_LINK(OGLPlayer,TimerHandler,Timer*,pTimer)
 {
     if (pTimer == &m_aTimer)
     {
+        osl::MutexGuard aGuard(m_aMutex);
         m_pOGLWindow->update();
-        m_aTimer.Start();
     }
 
     return 0;
