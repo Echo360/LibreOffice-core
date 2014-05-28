@@ -265,7 +265,6 @@ uno::Reference< media::XFrameGrabber > SAL_CALL OGLPlayer::createFrameGrabber()
     m_pHandle->viewport.width = getPreferredPlayerWindowSize().Width;
     m_pHandle->viewport.height = getPreferredPlayerWindowSize().Height;
     gltf_renderer_set_content(m_pHandle);
-    return uno::Reference< media::XFrameGrabber >();
     OGLFrameGrabber *pFrameGrabber = new OGLFrameGrabber( m_pHandle );
     return uno::Reference< media::XFrameGrabber >( pFrameGrabber );
 }
