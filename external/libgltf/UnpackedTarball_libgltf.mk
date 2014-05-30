@@ -19,6 +19,7 @@ $(eval $(call gb_UnpackedTarball_add_patches,libgltf,\
 	external/libgltf/patches/include_path_glew.patch \
 	external/libgltf/patches/include_path_freetype.patch \
 	external/libgltf/patches/smaller_fps.diff \
+	external/libgltf/patches/use_8x_ssaa.diff \
 	external/libgltf/patches/rgba_textures.patch \
 	external/libgltf/patches/deallocation_fix.patch \
 ))

@@ -1,0 +1,13 @@
+diff --git a/libgltf/src/RenderScene.h b/libgltf/src/RenderScene.h
+index b6bebd4..af135e0 100644
+--- libgltf/src/RenderScene.h
++++ libgltf/src/RenderScene.h
+@@ -29,7 +29,7 @@
+ #endif
+ 
+ #define LOAD_ONCE      0
+-#define SSAA           2
++#define SSAA           8
+ #define POLYGONSORTING 0
+ #define FBOVERT "#version 330 core\n"\
+ "attribute vec4 vPosition;\n"\
