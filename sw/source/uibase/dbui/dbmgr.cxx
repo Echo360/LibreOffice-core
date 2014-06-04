@@ -1002,17 +1002,8 @@ bool SwDBManager::MergeMailFiles(SwWrtShell* pSourceShell,
                             Application::Reschedule();
 
                         // The SfxObjectShell will be closed explicitly later but it is more safe to use SfxObjectShellLock here
-                        SfxObjectShellLock xWorkDocSh;
                         // copy the source document
-                        if( 1 == nDocNo && (bAsSingleFile || rMergeDescriptor.bCreateSingleFile) )
-                        {
-                            uno::Reference< util::XCloneable > xClone( pSourceDocSh->GetModel(), uno::UNO_QUERY);
-                            uno::Reference< lang::XUnoTunnel > xWorkDocShell( xClone->createClone(), uno::UNO_QUERY);
-                            SwXTextDocument* pWorkModel = reinterpret_cast<SwXTextDocument*>(xWorkDocShell->getSomething(SwXTextDocument::getUnoTunnelId()));
-                            xWorkDocSh = pWorkModel->GetDocShell();
-                        }
-                        else
-                            xWorkDocSh = pSourceDocSh->GetDoc()->CreateCopy( true );
+                        SfxObjectShellLock xWorkDocSh = pSourceDocSh->GetDoc()->CreateCopy( true );
 
                         {
                             //create a view frame for the document
