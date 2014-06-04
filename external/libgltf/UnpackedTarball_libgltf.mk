@@ -22,6 +22,7 @@ $(eval $(call gb_UnpackedTarball_add_patches,libgltf,\
 	external/libgltf/patches/use_8x_ssaa.diff \
 	external/libgltf/patches/rgba_textures.patch \
 	external/libgltf/patches/deallocation_fix.patch \
+	external/libgltf/patches/accurate_fps_counter.patch \
 ))
 
 # vim: set noet sw=4 ts=4:

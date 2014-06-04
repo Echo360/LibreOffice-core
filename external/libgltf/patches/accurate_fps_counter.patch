@@ -1,0 +1,41 @@
+diff -ur libgltf.org/src/FPSCounter.cpp libgltf/src/FPSCounter.cpp
+--- libgltf.org/src/FPSCounter.cpp	2014-06-04 08:55:02.133882400 +0200
++++ libgltf/src/FPSCounter.cpp	2014-06-04 09:14:40.847536600 +0200
+@@ -74,8 +74,9 @@
+     glUniform4fv(iLoc, 1, (GLfloat*)&lightVector);
+     if (mDurationTime >= CLOCKS_PER_SEC)
+     {
+-        mFPS = getFPS();
++        mFPS = mFrames;
+         mDurationTime = 0;
++        mFrames = 0;
+ #ifdef _WIN32
+         mTotalTime = getExecutionTime();
+ #endif
+@@ -110,6 +111,7 @@
+ #endif
+ #endif
+         }
++        ++mFrames;
+     }
+ 
+     pFont->printFormattedString(pViewport->width - 100, 30, 15, "FPS: %d",mFPS);
+diff -ur libgltf.org/src/FPSCounter.h libgltf/src/FPSCounter.h
+--- libgltf.org/src/FPSCounter.h	2014-06-04 08:55:02.133882400 +0200
++++ libgltf/src/FPSCounter.h	2014-06-04 08:58:18.704629400 +0200
+@@ -75,6 +75,7 @@
+                ShaderProgram* pShaderProgram)
+         : mFPS(0), mDurationTime(0),mCurrentTime(0)
+         ,mLastTime(0),mTotalTime(0),uiFPSProgram(0)
++        ,mFrames(0)
+     {
+         pFont = new Font();
+         pFont->loadFont(fontBuf,bufSize, 32);
+@@ -128,6 +129,7 @@
+ #endif
+ #endif
+ 
++    int mFrames;
+     int mFPS;
+ 
+ #if WRITEFPS2FILE
