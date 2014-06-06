@@ -1926,7 +1926,7 @@ static OUString lcl_GetUniqueFlyName( const SwDoc* pDoc, sal_uInt16 nDefStrId )
             pFlyFmt->GetName().startsWith( aName ) )
         {
             // Only get and set the Flag
-            nNum = static_cast< sal_uInt16 >( pFlyFmt->GetName().copy( nNmLen ).toInt32() );
+            nNum = static_cast< sal_uInt16 >( rtl_ustr_toInt32( pFlyFmt->GetName().getStr() + nNmLen, 10 ) );
             if( nNum-- && nNum < rFmts.size() )
                 pSetFlags[ nNum / 8 ] |= (0x01 << ( nNum & 0x07 ));
         }
