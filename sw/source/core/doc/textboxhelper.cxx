@@ -175,7 +175,7 @@ SwFrmFmt* SwTextBoxHelper::findTextBox(SwFrmFmt* pShape)
     {
         const SwFmtCntnt& rCntnt = pShape->GetCntnt();
         SwFrmFmts& rSpzFrmFmts = *pShape->GetDoc()->GetSpzFrmFmts();
-        for (SwFrmFmts::iterator it = rSpzFrmFmts.begin(); it != rSpzFrmFmts.end(); ++it)
+        for (SwFrmFmts::const_iterator it = rSpzFrmFmts.begin(); it != rSpzFrmFmts.end(); ++it)
         {
             SwFrmFmt* pFmt = *it;
             // Only a fly frame can be a TextBox.

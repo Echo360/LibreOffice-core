@@ -33,18 +33,23 @@ class IMapObject;
 class SwRect;
 class SwContact;
 class SdrObject;
+class SwFrmFmts;
 
 /// Style of a layout element.
 class SW_DLLPUBLIC SwFrmFmt: public SwFmt
 {
     friend class SwDoc;
     friend class SwPageDesc;    ///< Is allowed to call protected CTor.
+    friend class SwFrmFmts;     ///< Is allowed to update the list backref.
 
     ::com::sun::star::uno::WeakReference<
         ::com::sun::star::uno::XInterface> m_wXObject;
 
     //UUUU
     FillAttributesPtr           maFillAttributes;
+
+    // The assigned list.
+    SwFrmFmts *list;
 
 protected:
     SwFrmFmt(
@@ -136,6 +141,8 @@ public:
 
     //UUUU
     virtual FillAttributesPtr getFillAttributes() const SAL_OVERRIDE;
+
+    virtual void SetName( const OUString& rNewName, bool bBroadcast=false );
 };
 
 // The FlyFrame-Format

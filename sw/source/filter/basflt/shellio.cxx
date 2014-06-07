@@ -131,7 +131,7 @@ sal_uLong SwReader::Read( const Reader& rOptions )
     RedlineMode_t ePostReadRedlineMode( nsRedlineMode_t::REDLINE_IGNORE );
 
     // Array of FlyFormats
-    SwFrmFmts aFlyFrmArr;
+    SwFrmFmtsV aFlyFrmArr;
     // only read templates? then ignore multi selection!
     bool bFmtsOnly = po->aOpt.IsFmtsOnly();
 
@@ -153,8 +153,8 @@ sal_uLong SwReader::Read( const Reader& rOptions )
         // store for now all Fly's
         if( pCrsr )
         {
-            std::copy(pDoc->GetSpzFrmFmts()->begin(),
-                pDoc->GetSpzFrmFmts()->end(), std::back_inserter(aFlyFrmArr));
+            aFlyFrmArr.insert(aFlyFrmArr.end(), pDoc->GetSpzFrmFmts()->begin(),
+                pDoc->GetSpzFrmFmts()->end());
         }
 
         const sal_Int32 nSttCntnt = pPam->GetPoint()->nContent.GetIndex();

@@ -165,9 +165,9 @@ bool SwDoc::GetData( const OUString& rItem, const OUString& rMimeType,
     }
 
     _FindItem aPara( GetAppCharClass().lowercase( rItem ));
-    BOOST_FOREACH( const SwFrmFmt* pFmt, *mpTblFrmFmtTbl )
+    for (SwFrmFmts::const_iterator it = mpTblFrmFmtTbl->begin(); it != mpTblFrmFmtTbl->end(); it++)
     {
-        if (!(lcl_FindTable(pFmt, &aPara)))
+        if (!(lcl_FindTable(*it, &aPara)))
             break;
     }
     if( aPara.pTblNd )
@@ -209,9 +209,9 @@ bool SwDoc::SetData( const OUString& rItem, const OUString& rMimeType,
 
     OUString sItem(GetAppCharClass().lowercase(rItem));
     _FindItem aPara( sItem );
-    BOOST_FOREACH( const SwFrmFmt* pFmt, *mpTblFrmFmtTbl )
+    for (SwFrmFmts::const_iterator it = mpTblFrmFmtTbl->begin(); it != mpTblFrmFmtTbl->end(); it++)
     {
-        if (!(lcl_FindTable(pFmt, &aPara)))
+        if (!(lcl_FindTable(*it, &aPara)))
             break;
     }
     if( aPara.pTblNd )
@@ -268,9 +268,9 @@ bool SwDoc::SetData( const OUString& rItem, const OUString& rMimeType,
 
     _FindItem aPara( GetAppCharClass().lowercase(rItem) );
     // tables
-    BOOST_FOREACH( const SwFrmFmt* pFmt, *mpTblFrmFmtTbl )
+    for (SwFrmFmts::const_iterator it = mpTblFrmFmtTbl->begin(); it != mpTblFrmFmtTbl->end(); it++)
     {
-        if (!(lcl_FindTable(pFmt, &aPara)))
+        if (!(lcl_FindTable(*it, &aPara)))
             break;
     }
     if(aPara.pTblNd
@@ -313,9 +313,9 @@ bool SwDoc::SelectServerObj( const OUString& rStr, SwPaM*& rpPam,
         if( sCmp == "table" )
         {
             sName = rCC.lowercase( sName );
-            BOOST_FOREACH( const SwFrmFmt* pFmt, *mpTblFrmFmtTbl )
+            for (SwFrmFmts::const_iterator it = mpTblFrmFmtTbl->begin(); it != mpTblFrmFmtTbl->end(); it++)
             {
-                if (!(lcl_FindTable(pFmt, &aPara)))
+                if (!(lcl_FindTable(*it, &aPara)))
                     break;
             }
             if( aPara.pTblNd )

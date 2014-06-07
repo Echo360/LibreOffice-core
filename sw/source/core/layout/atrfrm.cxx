@@ -2376,7 +2376,8 @@ SwFrmFmt::SwFrmFmt(
     const sal_uInt16* pWhichRange)
 :   SwFmt(rPool, pFmtNm, (pWhichRange ? pWhichRange : aFrmFmtSetRange), pDrvdFrm, nFmtWhich),
     m_wXObject(),
-    maFillAttributes()
+    maFillAttributes(),
+    list(0)
 {
     //UUUU
     if(RES_FLYFRMFMT == nFmtWhich)
@@ -2402,7 +2403,8 @@ SwFrmFmt::SwFrmFmt(
     const sal_uInt16* pWhichRange)
 :   SwFmt(rPool, rFmtNm, (pWhichRange ? pWhichRange : aFrmFmtSetRange), pDrvdFrm, nFmtWhich),
     m_wXObject(),
-    maFillAttributes()
+    maFillAttributes(),
+    list(0)
 {
     //UUUU
     if(RES_FLYFRMFMT == nFmtWhich)
@@ -2418,6 +2420,28 @@ SwFrmFmt::SwFrmFmt(
         // to fill objects by color (blue8)
         SetFmtAttr(XFillStyleItem(XFILL_NONE));
     }
+}
+
+void SwFrmFmt::SetName( const OUString& rNewName, bool bBroadcast )
+{
+    SwFrmFmts *_list = list;
+    SwFrmFmts::const_iterator it;
+    bool move_entry = false;
+
+    if (list) {
+        it = list->find( this );
+        SAL_WARN_IF( list->end() == it, "sw", "SwFrmFmt not found in expected list" );
+//        move_entry = (it != list->begin());
+        if (move_entry)
+            // Clears list
+            list->erase( it );
+    }
+
+    SwFmt::SetName( rNewName, bBroadcast );
+
+    if (_list && move_entry)
+        // Sets list
+        _list->insert( this );
 }
 
 void SwFrmFmt::Modify( const SfxPoolItem* pOld, const SfxPoolItem* pNew )

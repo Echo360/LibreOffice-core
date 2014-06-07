@@ -107,7 +107,7 @@ public:
     inline bool IsDefault() const { return DerivedFrom() == 0; }
 
     inline OUString GetName() const   { return aFmtName; }
-    void SetName( const OUString& rNewName, bool bBroadcast=false );
+    virtual void SetName( const OUString& rNewName, bool bBroadcast=false );
     inline void SetName( const sal_Char* pNewName,
                          bool bBroadcast=false);
 
