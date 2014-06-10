@@ -1966,12 +1966,24 @@ OUString SwDoc::GetUniqueFrameName() const
 const SwFlyFrmFmt* SwDoc::FindFlyByName( const OUString& rName, sal_Int8 nNdTyp ) const
 {
     const SwFrmFmts& rFmts = *GetSpzFrmFmts();
-    for( sal_uInt16 n = rFmts.size(); n; )
-    {
-        const SwFrmFmt* pFlyFmt = rFmts[ --n ];
+    bool root;
+    const std::pair<SwFrmFmts::const_iterator,SwFrmFmts::const_iterator>
+        range = rFmts.findRange( RES_FLYFRMFMT, rName, root );
+
+    SwFrmFmts::const_iterator it = range.first;
+    while ( root || (it != range.second) ) {
+        const SwFrmFmt* pFlyFmt;
+        if ( root ) {
+            root = false;
+            pFlyFmt = rFmts[ 0 ];
+        }
+        else {
+            pFlyFmt = *it;
+            it++;
+        }
+
         const SwNodeIndex* pIdx = 0;
-        if( RES_FLYFRMFMT == pFlyFmt->Which() && pFlyFmt->GetName() == rName &&
-            0 != ( pIdx = pFlyFmt->GetCntnt().GetCntntIdx() ) &&
+        if( 0 != ( pIdx = pFlyFmt->GetCntnt().GetCntntIdx() ) &&
             pIdx->GetNode().GetNodes().IsDocNodes() )
         {
             if( nNdTyp )

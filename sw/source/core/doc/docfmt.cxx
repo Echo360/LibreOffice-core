@@ -2630,6 +2630,27 @@ SwFrmFmts::const_iterator SwFrmFmts::find( const value_type& x ) const
     return SwFrmFmtsBase::find( x );
 }
 
+std::pair<SwFrmFmts::const_iterator,SwFrmFmts::const_iterator>
+SwFrmFmts::findRange( sal_uInt16 type, const OUString& name, bool& root ) const
+{
+    SwFrmFmtSearch x( type, name, length );
+    std::pair<const_iterator, const_iterator> ret(end(), end());
+    if ( !empty() ) {
+        ret = std::equal_range(begin() + GetOffset(), end(), x, CompareSwFrmFmts());
+        root = (front()->Which() == type
+             && front()->GetName().compareTo( name ) == 0);
+    }
+    else
+        root = false;
+    return ret;
+}
+
+std::pair<SwFrmFmts::const_iterator,SwFrmFmts::const_iterator>
+SwFrmFmts::findRange( const value_type& x, bool& root ) const
+{
+    return findRange( x->Which(), x->GetName(), root );
+}
+
 bool CompareSwFrmFmts::operator()(SwFrmFmt* const& lhs, SwFrmFmt* const& rhs) const
 {
     if (lhs->Which() < rhs->Which())
@@ -2637,6 +2658,24 @@ bool CompareSwFrmFmts::operator()(SwFrmFmt* const& lhs, SwFrmFmt* const& rhs) co
     if (lhs->Which() > rhs->Which())
         return false;
     return (lhs->GetName().compareTo( rhs->GetName() ) < 0);
+}
+
+bool CompareSwFrmFmts::operator()(SwFrmFmt* const& lhs, SwFrmFmtSearch const& rhs) const
+{
+    if (lhs->Which() < rhs.type)
+        return true;
+    if (lhs->Which() > rhs.type)
+        return false;
+    return (lhs->GetName().compareTo( rhs.name ) < 0);
+}
+
+bool CompareSwFrmFmts::operator()(SwFrmFmtSearch const& lhs, SwFrmFmt* const& rhs) const
+{
+    if (lhs.type < rhs->Which())
+        return true;
+    if (lhs.type > rhs->Which())
+        return false;
+    return (lhs.name.compareTo( rhs->GetName() ) < 0);
 }
 
 SwFrmFmts::find_insert_type SwFrmFmts::insert( const value_type& x, bool isNewRoot )
