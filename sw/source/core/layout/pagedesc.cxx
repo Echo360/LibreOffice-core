@@ -305,14 +305,14 @@ bool SwPageDesc::IsFollowNextPageOfNode( const SwNode& rNd ) const
 SwFrmFmt *SwPageDesc::GetLeftFmt(bool const bFirst)
 {
     return (nsUseOnPage::PD_LEFT & eUse)
-            ? ((bFirst) ? &m_FirstLeft : &aLeft)
+            ? ((bFirst && !IsFirstShared()) ? &m_FirstLeft : &aLeft)
             : 0;
 }
 
 SwFrmFmt *SwPageDesc::GetRightFmt(bool const bFirst)
 {
     return (nsUseOnPage::PD_RIGHT & eUse)
-            ? ((bFirst) ? &m_FirstMaster : &aMaster)
+            ? ((bFirst && !IsFirstShared()) ? &m_FirstMaster : &aMaster)
             : 0;
 }
 
