@@ -400,6 +400,8 @@ private:
     glm::vec4 m_LightColor[MAX_LIGHT_NUM];
     glm::vec4 m_PositionWorldspace[MAX_LIGHT_NUM];
     float m_fLightPower[MAX_LIGHT_NUM];
+
+    glm::mat4 m_GlobalScaleMatrix;
 };
 
 }
