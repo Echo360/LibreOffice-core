@@ -379,8 +379,6 @@ private:
 
     float m_fViewAngle;
 
-    float m_fHeightWeight;
-
     bool mbPickingMode;
 
     GLuint mnPickingFbo;

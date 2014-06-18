@@ -54,10 +54,10 @@ int static checkGLError(const char *file, int line)
 #define CHECK_GL_ERROR() checkGLError(__FILE__, __LINE__)
 
 GLfloat texCoords[] = {
-    0.0f, 0.0f,
     1.0f, 0.0f,
     1.0f, 1.0f,
-    0.0f, 1.0f
+    0.0f, 1.0f,
+    0.0f, 0.0f
 };
 
 glm::vec4 getColorAsVector(sal_uInt32 nColor)
@@ -73,7 +73,6 @@ glm::vec4 getColorAsVector(sal_uInt32 nColor)
 OpenGL3DRenderer::OpenGL3DRenderer():
     m_uiSelectFrameCounter(0)
     , m_fViewAngle(30.0f)
-    , m_fHeightWeight(1.0f)
     , mbPickingMode(false)
 {
     m_Polygon3DInfo.lineOnly = false;
@@ -763,7 +762,7 @@ void OpenGL3DRenderer::RenderLine3D(Polygon3DInfo &polygon)
     glUseProgram(maResources.m_CommonProID);
     PosVecf3 trans = {0.0f, 0, 0.0};
     PosVecf3 angle = {0.0f, 0.0f, 0.0f};
-    PosVecf3 scale = {1.0f, 1.0f, m_fHeightWeight};
+    PosVecf3 scale = {1.0f, 1.0f, 1.0f};
     MoveModelf(trans, angle, scale);
     m_Model = m_GlobalScaleMatrix * m_Model;
     m_3DMVP = m_3DProjection * m_3DView * m_Model;
@@ -854,7 +853,7 @@ void OpenGL3DRenderer::RenderPolygon3D(Polygon3DInfo &polygon)
         Normals3D *normalList = polygon.normalsList[i];
         PosVecf3 trans = {0.0f, 0.0f, 0.0};
         PosVecf3 angle = {0.0f, 0.0f, 0.0f};
-        PosVecf3 scale = {1.0f, 1.0f, m_fHeightWeight};
+        PosVecf3 scale = {1.0f, 1.0f, 1.0f};
         MoveModelf(trans, angle, scale);
         m_Model = m_GlobalScaleMatrix * m_Model;
         glm::mat3 normalMatrix(m_Model);
@@ -1522,8 +1521,6 @@ void OpenGL3DRenderer::RenderExtrude3DObject()
                     (void*)0            // array buffer offset
                     );
         }
-        extrude3DInfo.zTransform *= m_fHeightWeight;
-        extrude3DInfo.zScale *= m_fHeightWeight;
         if(!mbPickingMode)
         {
             if (maResources.m_b330Support)
@@ -1574,21 +1571,21 @@ void OpenGL3DRenderer::CreateScreenTextTexture(
 
     TextInfo aTextInfo;
     aTextInfo.id = getColorAsVector(nUniqueId);
-    aTextInfo.vertex[0] = vTopLeft.x;
-    aTextInfo.vertex[1] = vTopLeft.y;
+    aTextInfo.vertex[0] = vBottomRight.x;
+    aTextInfo.vertex[1] = vBottomRight.y;
     aTextInfo.vertex[2] = 0;
 
     aTextInfo.vertex[3] = vBottomRight.x;
     aTextInfo.vertex[4] = vTopLeft.y;
     aTextInfo.vertex[5] = 0;
 
+    aTextInfo.vertex[6] = vTopLeft.x;
+    aTextInfo.vertex[7] = vTopLeft.y;
+    aTextInfo.vertex[8] = 0;
+
     aTextInfo.vertex[9] = vTopLeft.x;
     aTextInfo.vertex[10] = vBottomRight.y;
     aTextInfo.vertex[11] = 0;
-
-    aTextInfo.vertex[6] = vBottomRight.x;
-    aTextInfo.vertex[7] = vBottomRight.y;
-    aTextInfo.vertex[8] = 0;
 
     CHECK_GL_ERROR();
     glGenTextures(1, &aTextInfo.texture);
@@ -1603,7 +1600,7 @@ void OpenGL3DRenderer::CreateScreenTextTexture(
     CHECK_GL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     CHECK_GL_ERROR();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmpWidth, bmpHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmapBuf.get());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bmpWidth, bmpHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapBuf.get());
     CHECK_GL_ERROR();
     glBindTexture(GL_TEXTURE_2D, 0);
     CHECK_GL_ERROR();
@@ -1621,21 +1618,21 @@ void OpenGL3DRenderer::CreateTextTexture(const boost::shared_array<sal_uInt8> &b
 
     TextInfo aTextInfo;
     aTextInfo.id = getColorAsVector(nUniqueId);
-    aTextInfo.vertex[0] = vTopLeft.x;
-    aTextInfo.vertex[1] = vTopLeft.y;
-    aTextInfo.vertex[2] = vTopLeft.z * m_fHeightWeight;
+    aTextInfo.vertex[0] = vBottomRight.x;
+    aTextInfo.vertex[1] = vBottomRight.y;
+    aTextInfo.vertex[2] = vBottomRight.z;
 
     aTextInfo.vertex[3] = vTopRight.x;
     aTextInfo.vertex[4] = vTopRight.y;
-    aTextInfo.vertex[5] = vTopRight.z * m_fHeightWeight;
+    aTextInfo.vertex[5] = vTopRight.z;
 
     aTextInfo.vertex[9] = vBottomLeft.x;
     aTextInfo.vertex[10] = vBottomLeft.y;
-    aTextInfo.vertex[11] = vBottomLeft.z * m_fHeightWeight;
+    aTextInfo.vertex[11] = vBottomLeft.z;
 
-    aTextInfo.vertex[6] = vBottomRight.x;
-    aTextInfo.vertex[7] = vBottomRight.y;
-    aTextInfo.vertex[8] = vBottomRight.z * m_fHeightWeight;
+    aTextInfo.vertex[6] = vTopLeft.x;
+    aTextInfo.vertex[7] = vTopLeft.y;
+    aTextInfo.vertex[8] = vTopLeft.z;
 
     CHECK_GL_ERROR();
     glGenTextures(1, &aTextInfo.texture);
@@ -1650,7 +1647,7 @@ void OpenGL3DRenderer::CreateTextTexture(const boost::shared_array<sal_uInt8> &b
     CHECK_GL_ERROR();
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     CHECK_GL_ERROR();
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmpWidth, bmpHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, bitmapBuf.get());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, bmpWidth, bmpHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, bitmapBuf.get());
     CHECK_GL_ERROR();
     glBindTexture(GL_TEXTURE_2D, 0);
     CHECK_GL_ERROR();
@@ -1816,11 +1813,11 @@ void OpenGL3DRenderer::ClearBuffer()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glBegin (GL_QUADS);
-        glColor3f(0.3,0.3,0.3);
+        glColor3f(0.3f,0.3f,0.3f);
         glVertex3f (-1.0f, -1.0f, -1.0f);
         glVertex3f (1.0f, -1.0f, -1.0f);
 
-        glColor3f(0.0,0.0,0.0);
+        glColor3f(0.0f,0.0f,0.0f);
         glVertex3f (1.0f, 1.0f, -1.0f);
         glVertex3f (-1.0f, 1.0f, -1.0f);
         glEnd ();
@@ -1997,8 +1994,6 @@ void OpenGL3DRenderer::GetBatchBarsInfo()
     for (size_t i = 0; i < m_Extrude3DList.size(); i++)
     {
         Extrude3DInfo &extrude3DInfo = m_Extrude3DList[i];
-        extrude3DInfo.zTransform *= m_fHeightWeight;
-        extrude3DInfo.zScale *= m_fHeightWeight;
         if (m_Extrude3DInfo.rounded)
         {
             GetBatchTopAndFlatInfo(extrude3DInfo);
