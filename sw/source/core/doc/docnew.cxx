@@ -1010,10 +1010,10 @@ SfxObjectShell* SwDoc::CreateCopy(bool bCallInitNew ) const
     // Based on the simplified codepath from SwFEShell::Paste()
 
     // GetEndOfExtras + 1 = StartOfContent
-    SwNodeIndex aSourceIdx( GetNodes().GetEndOfExtras(), 2 );
+    SwNodeIndex aSourceIdx( GetNodes().GetEndOfExtras(), 1 );
     SwPaM aCpyPam( aSourceIdx ); // DocStart
 
-    SwNodeIndex aTargetIdx( pRet->GetNodes(), 2 );
+    SwNodeIndex aTargetIdx( pRet->GetNodes().GetEndOfContent() );
     SwPaM aInsertPam( aTargetIdx );
 
     aCpyPam.SetMark();
@@ -1057,6 +1057,12 @@ SfxObjectShell* SwDoc::CreateCopy(bool bCallInitNew ) const
     pRet->UpdateFlds( NULL, false );
 
     // End of SwFEShell::Paste() codepath
+
+    if ( bCallInitNew ) {
+        // delete leading page / initial content from target document
+        SwNodeIndex aDeleteIdx( pRet->GetNodes().GetEndOfExtras(), 2 );
+        pRet->GetNodes().Delete( aDeleteIdx, 1 );
+    }
 
     // remove the temporary shell if it is there as it was done before
     pRet->SetTmpDocShell( (SfxObjectShell*)NULL );
