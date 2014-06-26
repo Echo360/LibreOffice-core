@@ -531,7 +531,6 @@ private:
     OUString msDocAccTitle;
 
     void InitTOXTypes();
-    void Paste( const SwDoc& );
     bool DeleteAndJoinImpl(SwPaM&, const bool);
     bool DeleteAndJoinWithRedlineImpl(SwPaM&, const bool unused = false);
     bool DeleteRangeImpl(SwPaM&, const bool unused = false);

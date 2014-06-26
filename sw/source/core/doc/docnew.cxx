@@ -1007,37 +1007,22 @@ SfxObjectShell* SwDoc::CreateCopy(bool bCallInitNew ) const
 
     pRet->ReplaceStyles(*this);
 
-    // copy content
-    pRet->Paste( *this );
+    // Based on the simplified codepath from SwFEShell::Paste()
 
-    // remove the temporary shell if it is there as it was done before
-    pRet->SetTmpDocShell( (SfxObjectShell*)NULL );
+    // GetEndOfExtras + 1 = StartOfContent
+    SwNodeIndex aSourceIdx( GetNodes().GetEndOfExtras(), 2 );
+    SwPaM aCpyPam( aSourceIdx ); // DocStart
 
-    pRet->release();
-
-    return pRetShell;
-}
-
-// copy document content - code from SwFEShell::Paste( SwDoc* )
-void SwDoc::Paste( const SwDoc& rSource )
-{
-    // this has to be empty const sal_uInt16 nStartPageNumber = GetPhyPageNum();
-    // until the end of the NodesArray
-    SwNodeIndex aSourceIdx( rSource.GetNodes().GetEndOfExtras(), 2 );
-    SwPaM aCpyPam( aSourceIdx ); //DocStart
-    SwNodeIndex aTargetIdx( GetNodes().GetEndOfExtras(), 2 );
-    SwPaM aInsertPam( aTargetIdx ); //replaces PCURCRSR from SwFEShell::Paste()
+    SwNodeIndex aTargetIdx( pRet->GetNodes(), 2 );
+    SwPaM aInsertPam( aTargetIdx );
 
     aCpyPam.SetMark();
     aCpyPam.Move( fnMoveForward, fnGoDoc );
 
-    this->GetIDocumentUndoRedo().StartUndo( UNDO_INSGLOSSARY, NULL );
-    this->LockExpFlds();
+    pRet->LockExpFlds();
 
     {
         SwPosition& rInsPos = *aInsertPam.GetPoint();
-        //find out if the clipboard document starts with a table
-        bool bStartWithTable = 0 != aCpyPam.Start()->nNode.GetNode().FindTableNode();
         SwPosition aInsertPosition( rInsPos );
 
         {
@@ -1045,7 +1030,7 @@ void SwDoc::Paste( const SwDoc& rSource )
 
             aIndexBefore--;
 
-            rSource.CopyRange( aCpyPam, rInsPos, true );
+            CopyRange( aCpyPam, rInsPos, true );
             // Note: aCpyPam is invalid now
 
             ++aIndexBefore;
@@ -1054,38 +1039,31 @@ void SwDoc::Paste( const SwDoc& rSource )
 
             aPaM.GetDoc()->MakeUniqueNumRules(aPaM);
 
-            // No need to update the rsid, as this is an empty doc
+            // No need to update the rsid, as pRet is an empty doc
         }
 
-        //TODO: Is this necessary here? SaveTblBoxCntnt( &rInsPos );
-        if(/*bIncludingPageFrames && */bStartWithTable)
+        // additionally copy page bound frames
+        for ( sal_uInt16 i = 0; i < GetSpzFrmFmts()->size(); ++i )
         {
-            //remove the paragraph in front of the table
-            SwPaM aPara(aInsertPosition);
-            this->DelFullPara(aPara);
-        }
-        //additionally copy page bound frames
-        if( /*bIncludingPageFrames && */rSource.GetSpzFrmFmts()->size() )
-        {
-            for ( sal_uInt16 i = 0; i < rSource.GetSpzFrmFmts()->size(); ++i )
-            {
-                const SwFrmFmt& rCpyFmt = *(*rSource.GetSpzFrmFmts())[i];
-                    SwFmtAnchor aAnchor( rCpyFmt.GetAnchor() );
-                    if (FLY_AT_PAGE == aAnchor.GetAnchorId())
-                    {
-                        aAnchor.SetPageNum( aAnchor.GetPageNum() /*+ nStartPageNumber - */);
-                    }
-                    else
-                        continue;
-                    this->CopyLayoutFmt( rCpyFmt, aAnchor, true, true );
-            }
+            const SwFrmFmt& rCpyFmt = *(*GetSpzFrmFmts())[i];
+            SwFmtAnchor aAnchor( rCpyFmt.GetAnchor() );
+            if (FLY_AT_PAGE != aAnchor.GetAnchorId())
+                continue;
+            pRet->CopyLayoutFmt( rCpyFmt, aAnchor, true, true );
         }
     }
 
-    this->GetIDocumentUndoRedo().EndUndo( UNDO_INSGLOSSARY, NULL );
+    pRet->UnlockExpFlds();
+    pRet->UpdateFlds( NULL, false );
 
-    UnlockExpFlds();
-    UpdateFlds(NULL, false);
+    // End of SwFEShell::Paste() codepath
+
+    // remove the temporary shell if it is there as it was done before
+    pRet->SetTmpDocShell( (SfxObjectShell*)NULL );
+
+    pRet->release();
+
+    return pRetShell;
 }
 
 sal_uInt16 SwTxtFmtColls::GetPos(const SwTxtFmtColl* p) const
