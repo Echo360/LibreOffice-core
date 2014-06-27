@@ -1883,7 +1883,10 @@ public:
     ::sw::MetaFieldManager & GetMetaFieldManager();
     ::sw::UndoManager      & GetUndoManager();
     ::sw::UndoManager const& GetUndoManager() const;
+
     SfxObjectShell* CreateCopy(bool bCallInitNew) const;
+    void Append( const SwDoc& rSource, int nStartPageNumber,
+                 SwPageDesc* pTargetPageDesc, int nPhysPageNumber );
 
     /**
      * Dumps the entire nodes structure to the given destination (file nodes.xml in the current directory by default)

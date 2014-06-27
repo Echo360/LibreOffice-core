@@ -668,13 +668,13 @@ namespace {
     typedef std::pair< PaMPtr, PositionPtr > Insertion;
 }
 
-bool SwFEShell::Paste( SwDoc* pClpDoc, bool bIncludingPageFrames, bool bIncludeFullDocument )
+bool SwFEShell::Paste( SwDoc* pClpDoc, bool bIncludingPageFrames )
 {
     SET_CURR_SHELL( this );
     OSL_ENSURE( pClpDoc, "no clipboard document"  );
     const sal_uInt16 nStartPageNumber = GetPhyPageNum();
     // then till end of the nodes array
-    SwNodeIndex aIdx( pClpDoc->GetNodes().GetEndOfExtras(), (bIncludeFullDocument) ? 1 : 2 );
+    SwNodeIndex aIdx( pClpDoc->GetNodes().GetEndOfExtras(), 2 );
     SwPaM aCpyPam( aIdx ); //DocStart
 
     // If there are table formulas in the area, then display the table first
@@ -1021,6 +1021,10 @@ bool SwFEShell::Paste( SwDoc* pClpDoc, bool bIncludingPageFrames, bool bIncludeF
                 // then the BoxAttribute should be removed
                 GetDoc()->ClearBoxNumAttrs( rInsPos.nNode );
             }
+
+            // **
+            // ** Update SwDoc::Append, if you change the following code **
+            // **
 
             // find out if the clipboard document starts with a table
             bool bStartWithTable = 0 != aCpyPam.Start()->nNode.GetNode().FindTableNode();

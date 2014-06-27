@@ -2760,6 +2760,10 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
         //initiate SelectShell() to create sub shells
         pTargetView->AttrChangedNotify( &pTargetView->GetWrtShell() );
         SwWrtShell* pTargetShell = pTargetView->GetWrtShellPtr();
+        SwDoc* pTargetDoc = pTargetShell->GetDoc();
+
+        pTargetView->GetDocShell()->_LoadStyles( *rSourceView.GetDocShell(), true );
+
         // #i63806#
         const SwPageDesc* pSourcePageDesc = rSourceShell.FindPageDescByName( sStartingPageDesc );
         const SwFrmFmt& rMaster = pSourcePageDesc->GetMaster();
@@ -2848,8 +2852,6 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
             {
                 //create a new pagestyle
                 //copy the pagedesc from the current document to the new document and change the name of the to-be-applied style
-
-                SwDoc* pTargetDoc = pTargetShell->GetDoc();
                 OUString sNewPageDescName = lcl_FindUniqueName(pTargetShell, sStartingPageDesc, nDocNo );
                 pTargetShell->GetDoc()->MakePageDesc( sNewPageDescName );
                 pTargetPageDesc = pTargetShell->FindPageDescByName( sNewPageDescName );
@@ -2862,65 +2864,31 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
                     lcl_CopyFollowPageDesc( *pTargetShell, *pWorkPageDesc, *pTargetPageDesc, nDocNo );
                 }
             }
-            if(nDocNo == 1 || bPageStylesWithHeaderFooter)
-                pTargetView->GetDocShell()->_LoadStyles( *rSourceView.GetDocShell(), true );
-            if(nDocNo > 1)
-                pTargetShell->InsertPageBreak( &sModifiedStartingPageDesc, nStartingPageNo );
             else
+                pTargetPageDesc = pTargetShell->FindPageDescByName( sModifiedStartingPageDesc );
+
+            if(nDocNo == 1)
                 pTargetShell->SetPageStyle(sModifiedStartingPageDesc);
 
             sal_uInt16 nPageCountBefore = pTargetShell->GetPageCnt();
             OSL_ENSURE(!pTargetShell->GetTableFmt(),"target document ends with a table - paragraph should be appended");
-            bool para_added = false;
-
-            //#i51359# add a second paragraph in case there's only one
-            {
-                SwNodeIndex aIdx( pWorkDoc->GetNodes().GetEndOfExtras(), 2 );
-                SwPosition aTestPos( aIdx );
-                SwCursor aTestCrsr( aTestPos, 0, false );
-                if ( !aTestCrsr.MovePara(fnParaNext, fnParaStart) )
-                {
-                    //append a paragraph
-                    pWorkDoc->AppendTxtNode( aTestPos );
-                    para_added = true;
-                }
-            }
 
 #ifdef DBG_UTIL
             if ( nDocNo <= MAX_DOC_DUMP )
                 lcl_SaveDoc( xWorkDocSh, "WorkDoc", nDocNo );
 #endif
 
-            SwNodeIndex fixupIdx( pTargetNodes->GetEndOfContent(), -1 );
-            pTargetShell->Paste( rWorkShell.GetDoc(), true, true );
+            if (nDocNo == 1 ) {
+                pTargetDoc->Append( *(rWorkShell.GetDoc()), 0, pTargetPageDesc, 0 );
 
-            if (bPageStylesWithHeaderFooter) {
-                // set the real page desc and update the number offset for the pasted document
-                fixupIdx += 2;
-                SwTxtNode *aTxtNd = fixupIdx.GetNode().GetTxtNode();
-                if ( aTxtNd ) {
-                    SfxPoolItem *pNewItem = aTxtNd->GetAttr( RES_PAGEDESC ).Clone();
-                    SwFmtPageDesc *aDesc = dynamic_cast< SwFmtPageDesc* >( pNewItem );
-                    if ( aDesc ) {
-                        aDesc->SetNumOffset( nStartingPageNo );
-                        aDesc->RegisterToPageDesc( *pTargetPageDesc );
-                        aTxtNd->SetAttr( *aDesc );
-                    }
-                    delete pNewItem;
-                }
-
-                // delete the leading empty page from InsertPageBreak
-                fixupIdx -= 2;
-                pTargetNodes->Delete( fixupIdx, 2 );
+                // delete the leading empty page from the initial SwDoc
+                pTargetShell->SttEndDoc( false );
+                SwNodeIndex aDeleteIdx( pTargetNodes->GetEndOfExtras(), 2 );
+                pTargetNodes->Delete( aDeleteIdx, 1 );
             }
-
-            if ( para_added ) {
-                // Move cursor to the start or Delete will assert because
-                // of the cursors SwIndex ref on the deleting node.
-                pTargetShell->SttEndDoc( true );
-                SwNodeIndex aTargetIdx( pTargetNodes->GetEndOfContent(), -1 );
-                pTargetNodes->Delete( aTargetIdx, 1 );
-            }
+            else
+                pTargetDoc->Append( *(rWorkShell.GetDoc()), nStartingPageNo,
+                                    pTargetPageDesc, pTargetShell->GetPhyPageNum() );
 
             // #i72820# calculate layout to be able to find the correct page index
             pTargetShell->CalcLayout();

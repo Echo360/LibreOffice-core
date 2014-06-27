@@ -995,7 +995,8 @@ SfxObjectShell* SwDoc::CreateCopy(bool bCallInitNew ) const
     SfxObjectShell* pRetShell = new SwDocShell( pRet, SFX_CREATE_MODE_STANDARD );
     if( bCallInitNew )
     {
-        // it could happen that DoInitNew creates model, that increases the refcount of the object
+        // it could happen that DoInitNew creates model,
+        // that increases the refcount of the object
         pRetShell->DoInitNew();
     }
 
@@ -1007,56 +1008,7 @@ SfxObjectShell* SwDoc::CreateCopy(bool bCallInitNew ) const
 
     pRet->ReplaceStyles(*this);
 
-    // Based on the simplified codepath from SwFEShell::Paste()
-
-    // GetEndOfExtras + 1 = StartOfContent
-    SwNodeIndex aSourceIdx( GetNodes().GetEndOfExtras(), 1 );
-    SwPaM aCpyPam( aSourceIdx ); // DocStart
-
-    SwNodeIndex aTargetIdx( pRet->GetNodes().GetEndOfContent() );
-    SwPaM aInsertPam( aTargetIdx );
-
-    aCpyPam.SetMark();
-    aCpyPam.Move( fnMoveForward, fnGoDoc );
-
-    pRet->LockExpFlds();
-
-    {
-        SwPosition& rInsPos = *aInsertPam.GetPoint();
-        SwPosition aInsertPosition( rInsPos );
-
-        {
-            SwNodeIndex aIndexBefore(rInsPos.nNode);
-
-            aIndexBefore--;
-
-            CopyRange( aCpyPam, rInsPos, true );
-            // Note: aCpyPam is invalid now
-
-            ++aIndexBefore;
-            SwPaM aPaM(SwPosition(aIndexBefore),
-                       SwPosition(rInsPos.nNode));
-
-            aPaM.GetDoc()->MakeUniqueNumRules(aPaM);
-
-            // No need to update the rsid, as pRet is an empty doc
-        }
-
-        // additionally copy page bound frames
-        for ( sal_uInt16 i = 0; i < GetSpzFrmFmts()->size(); ++i )
-        {
-            const SwFrmFmt& rCpyFmt = *(*GetSpzFrmFmts())[i];
-            SwFmtAnchor aAnchor( rCpyFmt.GetAnchor() );
-            if (FLY_AT_PAGE != aAnchor.GetAnchorId())
-                continue;
-            pRet->CopyLayoutFmt( rCpyFmt, aAnchor, true, true );
-        }
-    }
-
-    pRet->UnlockExpFlds();
-    pRet->UpdateFlds( NULL, false );
-
-    // End of SwFEShell::Paste() codepath
+    pRet->Append(*this, 0, NULL, 0);
 
     if ( bCallInitNew ) {
         // delete leading page / initial content from target document
@@ -1065,11 +1017,101 @@ SfxObjectShell* SwDoc::CreateCopy(bool bCallInitNew ) const
     }
 
     // remove the temporary shell if it is there as it was done before
-    pRet->SetTmpDocShell( (SfxObjectShell*)NULL );
+    pRet->SetTmpDocShell( (SfxObjectShell*) NULL );
 
     pRet->release();
 
     return pRetShell;
+}
+
+// appends all pages of source SwDoc - based on SwFEShell::Paste( SwDoc* )
+void SwDoc::Append( const SwDoc& rSource, int nStartPageNumber,
+                    SwPageDesc* pTargetPageDesc, int nPhysPageNumber )
+{
+    // GetEndOfExtras + 1 = StartOfContent
+    SwNodeIndex aSourceIdx( rSource.GetNodes().GetEndOfExtras(), 1 );
+    SwPaM aCpyPam( aSourceIdx ); //DocStart
+
+    // Append at the end of document / content
+    SwNodeIndex aTargetIdx( GetNodes().GetEndOfContent() );
+    SwPaM aInsertPam( aTargetIdx ); //replaces PCURCRSR from SwFEShell::Paste()
+    aTargetIdx--;
+
+    aCpyPam.SetMark();
+    aCpyPam.Move( fnMoveForward, fnGoDoc );
+
+    GetIDocumentUndoRedo().StartUndo( UNDO_INSGLOSSARY, NULL );
+    LockExpFlds();
+
+    {
+        // **
+        // ** refer to SwFEShell::Paste, if you change the following code **
+        // **
+
+        SwPosition& rInsPos = *aInsertPam.GetPoint();
+
+        {
+            SwNodeIndex aIndexBefore(rInsPos.nNode);
+
+            aIndexBefore--;
+
+            rSource.CopyRange( aCpyPam, rInsPos, true );
+            // Note: aCpyPam is invalid now
+
+            ++aIndexBefore;
+            SwPaM aPaM(SwPosition(aIndexBefore),
+                       SwPosition(rInsPos.nNode));
+
+            aPaM.GetDoc()->MakeUniqueNumRules(aPaM);
+
+            // Update the rsid of each pasted text node
+            SwNodes &rDestNodes = GetNodes();
+            sal_uLong const nEndIdx = aPaM.End()->nNode.GetIndex();
+
+            for (sal_uLong nIdx = aPaM.Start()->nNode.GetIndex();
+                    nIdx <= nEndIdx; ++nIdx)
+            {
+                SwTxtNode *const pTxtNode = rDestNodes[nIdx]->GetTxtNode();
+                if ( pTxtNode )
+                    UpdateParRsid( pTxtNode );
+            }
+        }
+
+        // update the PageDesc pool item
+        if ( nStartPageNumber || pTargetPageDesc ) {
+            SwTxtNode *aTxtNd = dynamic_cast<  SwTxtNode* >( GetNodes().GoNext(&aTargetIdx) );
+            if ( aTxtNd ) {
+                SfxPoolItem *pNewItem = aTxtNd->GetAttr( RES_PAGEDESC ).Clone();
+                SwFmtPageDesc *aDesc = dynamic_cast< SwFmtPageDesc* >( pNewItem );
+                if ( aDesc ) {
+                    if ( nStartPageNumber )
+                        aDesc->SetNumOffset( nStartPageNumber );
+                    if ( pTargetPageDesc )
+                        aDesc->RegisterToPageDesc( *pTargetPageDesc );
+                    aTxtNd->SetAttr( *aDesc );
+                }
+                delete pNewItem;
+            }
+        }
+
+        // additionally copy page bound frames
+        const SwFrmFmts *pSpzFrmFmts = rSource.GetSpzFrmFmts();
+        for ( sal_uInt16 i = 0; i < pSpzFrmFmts->size(); ++i )
+        {
+            const SwFrmFmt& rCpyFmt = *(*pSpzFrmFmts)[i];
+            SwFmtAnchor aAnchor( rCpyFmt.GetAnchor() );
+            if (FLY_AT_PAGE != aAnchor.GetAnchorId())
+                continue;
+            if ( nStartPageNumber )
+                aAnchor.SetPageNum( aAnchor.GetPageNum() + nPhysPageNumber );
+            CopyLayoutFmt( rCpyFmt, aAnchor, true, true );
+        }
+    }
+
+    GetIDocumentUndoRedo().EndUndo( UNDO_INSGLOSSARY, NULL );
+
+    UnlockExpFlds();
+    UpdateFlds(NULL, false);
 }
 
 sal_uInt16 SwTxtFmtColls::GetPos(const SwTxtFmtColl* p) const
