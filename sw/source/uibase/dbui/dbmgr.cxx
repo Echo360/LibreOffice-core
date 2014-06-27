@@ -125,6 +125,8 @@
 #include <unomid.h>
 #include <section.hxx>
 #include <rootfrm.hxx>
+#include <fmtpdsc.hxx>
+#include <ndtxt.hxx>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -2772,6 +2774,7 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
         const SwFrmFmt& rMaster = pSourcePageDesc->GetMaster();
         bool bPageStylesWithHeaderFooter = rMaster.GetHeader().IsActive()  ||
                                         rMaster.GetFooter().IsActive();
+        SwNodes *pTargetNodes = &pTargetShell->GetDoc()->GetNodes();
 
         // copy compatibility options
         lcl_CopyCompatibilityOptions( rSourceShell, *pTargetShell);
@@ -2860,6 +2863,7 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
 
             //#i63806# put the styles to the target document
             //if the source uses headers or footers each new copy need to copy a new page styles
+            SwPageDesc* pTargetPageDesc = NULL;
             if(bPageStylesWithHeaderFooter)
             {
                 //create a new pagestyle
@@ -2868,7 +2872,7 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
                 SwDoc* pTargetDoc = pTargetShell->GetDoc();
                 OUString sNewPageDescName = lcl_FindUniqueName(pTargetShell, sStartingPageDesc, nDocNo );
                 pTargetShell->GetDoc()->MakePageDesc( sNewPageDescName );
-                SwPageDesc* pTargetPageDesc = pTargetShell->FindPageDescByName( sNewPageDescName );
+                pTargetPageDesc = pTargetShell->FindPageDescByName( sNewPageDescName );
                 const SwPageDesc* pWorkPageDesc = rWorkShell.FindPageDescByName( sStartingPageDesc );
 
                 if(pWorkPageDesc && pTargetPageDesc)
@@ -2911,7 +2915,29 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
             if ( nDocNo <= MAX_DOC_DUMP )
                 lcl_SaveDoc( xWorkDocSh, "WorkDoc", nDocNo );
 #endif
-            pTargetShell->Paste( rWorkShell.GetDoc(), true );
+
+            SwNodeIndex fixupIdx( pTargetNodes->GetEndOfContent(), -1 );
+            pTargetShell->Paste( rWorkShell.GetDoc(), true, true );
+
+            if (bPageStylesWithHeaderFooter) {
+                // set the real page desc and update the number offset for the pasted document
+                fixupIdx += 2;
+                SwTxtNode *aTxtNd = fixupIdx.GetNode().GetTxtNode();
+                if ( aTxtNd ) {
+                    SfxPoolItem *pNewItem = aTxtNd->GetAttr( RES_PAGEDESC ).Clone();
+                    SwFmtPageDesc *aDesc = dynamic_cast< SwFmtPageDesc* >( pNewItem );
+                    if ( aDesc ) {
+                        aDesc->SetNumOffset( nStartingPageNo );
+                        aDesc->RegisterToPageDesc( *pTargetPageDesc );
+                        aTxtNd->SetAttr( *aDesc );
+                    }
+                    delete pNewItem;
+                }
+
+                // delete the leading empty page from InsertPageBreak
+                fixupIdx -= 2;
+                pTargetNodes->Delete( fixupIdx, 2 );
+            }
 
             if ( para_added ) {
                 // Move cursor to the start or Delete will assert because
@@ -2921,12 +2947,9 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
                 pTargetNodes->Delete( aTargetIdx, 1 );
             }
 
-            //convert fields in page styles (header/footer - has to be done after the first document has been pasted
-            if(1 == nDocNo)
-            {
-                pTargetShell->CalcLayout();
-                pTargetShell->ConvertFieldsToText();
-            }
+            // #i72820# calculate layout to be able to find the correct page index
+            pTargetShell->CalcLayout();
+
 #ifdef DBG_UTIL
             if ( nDocNo <= MAX_DOC_DUMP )
                 lcl_SaveDoc( xTargetDocShell, "MergeDoc" );
@@ -2935,8 +2958,6 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
             //add the document info to the config item
             SwDocMergeInfo aMergeInfo;
             aMergeInfo.nStartPageInTarget = nPageCountBefore;
-            //#i72820# calculate layout to be able to find the correct page index
-            pTargetShell->CalcLayout();
             aMergeInfo.nEndPageInTarget = pTargetShell->GetPageCnt();
             aMergeInfo.nDBRow = nStartRow;
             rMMConfig.AddMergedDocument( aMergeInfo );
