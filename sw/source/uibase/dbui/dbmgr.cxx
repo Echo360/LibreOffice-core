@@ -2892,6 +2892,8 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
             }
             sal_uInt16 nPageCountBefore = pTargetShell->GetPageCnt();
             OSL_ENSURE(!pTargetShell->GetTableFmt(),"target document ends with a table - paragraph should be appended");
+            bool para_added = false;
+
             //#i51359# add a second paragraph in case there's only one
             {
                 SwNodeIndex aIdx( pWorkDoc->GetNodes().GetEndOfExtras(), 2 );
@@ -2901,6 +2903,7 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
                 {
                     //append a paragraph
                     pWorkDoc->AppendTxtNode( aTestPos );
+                    para_added = true;
                 }
             }
 
@@ -2909,6 +2912,15 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
                 lcl_SaveDoc( xWorkDocSh, "WorkDoc", nDocNo );
 #endif
             pTargetShell->Paste( rWorkShell.GetDoc(), true );
+
+            if ( para_added ) {
+                // Move cursor to the start or Delete will assert because
+                // of the cursors SwIndex ref on the deleting node.
+                pTargetShell->SttEndDoc( true );
+                SwNodeIndex aTargetIdx( pTargetNodes->GetEndOfContent(), -1 );
+                pTargetNodes->Delete( aTargetIdx, 1 );
+            }
+
             //convert fields in page styles (header/footer - has to be done after the first document has been pasted
             if(1 == nDocNo)
             {
