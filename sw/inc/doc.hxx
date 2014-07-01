@@ -1885,8 +1885,8 @@ public:
     ::sw::UndoManager const& GetUndoManager() const;
 
     SfxObjectShell* CreateCopy(bool bCallInitNew) const;
-    void Append( const SwDoc& rSource, int nStartPageNumber,
-                 SwPageDesc* pTargetPageDesc, int nPhysPageNumber );
+    void Append( const SwDoc& rSource, sal_uInt16 nStartPageNumber,
+                 SwPageDesc* pTargetPageDesc, bool bDeletePrevious = false );
 
     /**
      * Dumps the entire nodes structure to the given destination (file nodes.xml in the current directory by default)

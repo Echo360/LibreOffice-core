@@ -2769,7 +2769,6 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
         const SwFrmFmt& rMaster = pSourcePageDesc->GetMaster();
         bool bPageStylesWithHeaderFooter = rMaster.GetHeader().IsActive()  ||
                                         rMaster.GetFooter().IsActive();
-        SwNodes *pTargetNodes = &pTargetShell->GetDoc()->GetNodes();
 
         // copy compatibility options
         lcl_CopyCompatibilityOptions( rSourceShell, *pTargetShell);
@@ -2840,10 +2839,6 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
             }
 
             // insert the document into the target document
-            rWorkShell.SttEndDoc(false);
-            rWorkShell.SttEndDoc(true);
-            rWorkShell.SelAll();
-            pTargetShell->SttEndDoc(false);
 
             //#i63806# put the styles to the target document
             //if the source uses headers or footers each new copy need to copy a new page styles
@@ -2868,7 +2863,7 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
                 pTargetPageDesc = pTargetShell->FindPageDescByName( sModifiedStartingPageDesc );
 
             if(nDocNo == 1)
-                pTargetShell->SetPageStyle(sModifiedStartingPageDesc);
+                pTargetShell->SetPageStyle( sModifiedStartingPageDesc );
 
             sal_uInt16 nPageCountBefore = pTargetShell->GetPageCnt();
             OSL_ENSURE(!pTargetShell->GetTableFmt(),"target document ends with a table - paragraph should be appended");
@@ -2877,18 +2872,7 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
             if ( nDocNo <= MAX_DOC_DUMP )
                 lcl_SaveDoc( xWorkDocSh, "WorkDoc", nDocNo );
 #endif
-
-            if (nDocNo == 1 ) {
-                pTargetDoc->Append( *(rWorkShell.GetDoc()), 0, pTargetPageDesc, 0 );
-
-                // delete the leading empty page from the initial SwDoc
-                pTargetShell->SttEndDoc( false );
-                SwNodeIndex aDeleteIdx( pTargetNodes->GetEndOfExtras(), 2 );
-                pTargetNodes->Delete( aDeleteIdx, 1 );
-            }
-            else
-                pTargetDoc->Append( *(rWorkShell.GetDoc()), nStartingPageNo,
-                                    pTargetPageDesc, pTargetShell->GetPhyPageNum() );
+            pTargetDoc->Append( *(rWorkShell.GetDoc()), nStartingPageNo, pTargetPageDesc, nDocNo == 1 );
 
             // #i72820# calculate layout to be able to find the correct page index
             pTargetShell->CalcLayout();
