@@ -469,7 +469,8 @@ private:
     void CopyFlyInFlyImpl(  const SwNodeRange& rRg,
                             const sal_Int32 nEndContentIndex,
                             const SwNodeIndex& rStartIdx,
-                            const bool bCopyFlyAtFly = false ) const;
+                            const bool bCopyFlyAtFly = false,
+                            const bool bMergedFirstNode = false ) const;
     sal_Int8 SetFlyFrmAnchor( SwFrmFmt& rFlyFmt, SfxItemSet& rSet, bool bNewFrms );
 
     typedef SwFmt* (SwDoc:: *FNCopyFmt)( const OUString&, SwFmt*, bool, bool );
@@ -902,7 +903,8 @@ public:
                             const SwPaM* pCopiedPaM = NULL,
                             bool bMakeNewFrms = true,
                             bool bDelRedlines = true,
-                            bool bCopyFlyAtFly = false ) const;
+                            bool bCopyFlyAtFly = false,
+                            bool bSkipFirstNode = false ) const;
 
     //UUUU Helper that checks for unique items for DrawingLayer items of type NameOrIndex
     // and evtl. corrects that items to ensure unique names for that type. This call may
