@@ -1221,6 +1221,9 @@ else
             }
         }
 
+        if ( pTargetShell )
+            pTargetShell->CalcLayout();
+
         // finally copy page bound frames
         const SwFrmFmts *pSpzFrmFmts = rSource.GetSpzFrmFmts();
         for ( sal_uInt16 i = 0; i < pSpzFrmFmts->size(); ++i )
