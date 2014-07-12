@@ -1281,7 +1281,10 @@ void SwDoc::UpdateExpFlds( SwTxtFld* pUpdtFld, bool bUpdRefFlds )
 
     // already set the current record number
     SwDBManager* pMgr = GetDBManager();
-    pMgr->CloseAll(false);
+    pMgr->CloseAll( false );
+
+    // FIXME: GetLanguage() instead of LANGUAGE_SYSTEM
+    bool bCanFill = pMgr->FillCalcWithMergeData( GetNumberFormatter(), LANGUAGE_SYSTEM, true, aCalc );
 #endif
 
     // Make sure we don't hide all sections, which would lead to a crash. First, count how many of them do we have.
@@ -1376,6 +1379,8 @@ void SwDoc::UpdateExpFlds( SwTxtFld* pUpdtFld, bool bUpdRefFlds )
 #if HAVE_FEATURE_DBCONNECTIVITY
         {
             UpdateDBNumFlds( *(SwDBNameInfField*)pFld, aCalc );
+            if( bCanFill )
+                bCanFill = pMgr->FillCalcWithMergeData( GetNumberFormatter(), LANGUAGE_SYSTEM, true, aCalc );
         }
 #endif
         break;

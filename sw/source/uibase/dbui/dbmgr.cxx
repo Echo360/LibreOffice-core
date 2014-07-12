@@ -127,6 +127,8 @@
 #include <rootfrm.hxx>
 #include <fmtpdsc.hxx>
 #include <ndtxt.hxx>
+#include <calc.hxx>
+#include <dbfld.hxx>
 
 #include <boost/scoped_ptr.hpp>
 
@@ -1059,7 +1061,7 @@ bool SwDBManager::MergeMailFiles(SwWrtShell* pSourceShell,
                             pWorkDoc->SetDBManager( this );
                             pWorkDoc->EmbedAllLinks();
 
-                            // #i69485# lock fields to prevent access to the result set while calculating layout
+                            // #i69458# lock fields to prevent access to the result set while calculating layout
                             rWorkShell.LockExpFlds();
                             rWorkShell.CalcLayout();
                             rWorkShell.UnlockExpFlds();
@@ -1847,6 +1849,74 @@ bool SwDBManager::ToNextMergeRecord()
 {
     OSL_ENSURE(pImpl->pMergeData && pImpl->pMergeData->xResultSet.is(), "no data source in merge");
     return ToNextRecord(pImpl->pMergeData);
+}
+
+bool SwDBManager::FillCalcWithMergeData( SvNumberFormatter *pDocFormatter,
+                                         sal_uInt16 nLanguage, bool asString, SwCalc &aCalc )
+{
+    if (!(pImpl->pMergeData && pImpl->pMergeData->xResultSet.is()))
+        return false;
+
+    uno::Reference< XColumnsSupplier > xColsSupp( pImpl->pMergeData->xResultSet, UNO_QUERY );
+    if(xColsSupp.is())
+    {
+        uno::Reference<XNameAccess> xCols = xColsSupp->getColumns();
+        const Sequence<OUString> aColNames = xCols->getElementNames();
+        const OUString* pColNames = aColNames.getConstArray();
+        OUString aString;
+
+        const bool bExistsNextRecord = ExistsNextRecord();
+
+        for( int nCol = 0; nCol < aColNames.getLength(); nCol++ )
+        {
+            const OUString &rColName = pColNames[nCol];
+
+            // empty variables, if no more records;
+            if( !bExistsNextRecord ) {
+                aCalc.VarChange( rColName, 0 );
+                continue;
+            }
+
+            double aNumber = DBL_MAX;
+            if( lcl_GetColumnCnt(pImpl->pMergeData, rColName, nLanguage, aString, &aNumber) ) {
+                // get the column type
+                sal_Int32 nColumnType;
+                Any aCol = xCols->getByName( pColNames[nCol] );
+                uno::Reference<XPropertySet> xCol;
+                aCol >>= xCol;
+                Any aType = xCol->getPropertyValue( "Type" );
+                aType >>= nColumnType;
+
+                sal_uInt32 nFmt;
+                if( !GetMergeColumnCnt(pColNames[nCol], nLanguage, aString, &aNumber, &nFmt) )
+                    continue;
+
+                // aNumber is overwritten by SwDBField::FormatValue, so store initial status
+                bool colIsNumber = aNumber != DBL_MAX;
+                bool bValidValue = SwDBField::FormatValue( pDocFormatter, aString, nFmt,
+                                                           aNumber, nColumnType, NULL );
+                if( colIsNumber ) {
+                    if( bValidValue ) {
+                        SwSbxValue aValue;
+                        if( !asString )
+                            aValue.PutDouble( aNumber );
+                        else
+                            aValue.PutString( aString );
+                        SAL_INFO( "sw.dbmgr", "'" << pColNames[nCol] << "': " << aNumber << " / " << aString );
+                        aCalc.VarChange( pColNames[nCol], aValue );
+                    }
+                }
+                else {
+                    SwSbxValue aValue;
+                    aValue.PutString( aString );
+                    SAL_INFO( "sw.dbmgr", "'" << pColNames[nCol] << "': " << aString );
+                    aCalc.VarChange( pColNames[nCol], aValue );
+                }
+            }
+        }
+        return bExistsNextRecord;
+    }
+    return false;
 }
 
 bool SwDBManager::ToNextRecord(
@@ -2829,7 +2899,7 @@ sal_Int32 SwDBManager::MergeDocuments( SwMailMergeConfigItem& rMMConfig,
                     }
                 }
 
-                // #i69485# lock fields to prevent access to the result set while calculating layout
+                // #i69458# lock fields to prevent access to the result set while calculating layout
                 rWorkShell.LockExpFlds();
                 // create a layout
                 rWorkShell.CalcLayout();
