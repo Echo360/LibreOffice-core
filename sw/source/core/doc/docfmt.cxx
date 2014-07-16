@@ -1742,7 +1742,7 @@ void SwDoc::SetTxtFmtCollByAutoFmt( const SwPosition& rPos, sal_uInt16 nPoolId,
         pRedl->SetExtraData( &aExtraData );
 
         //TODO: Undo is still missing!
-        AppendRedline( pRedl, true );
+        getIDocumentRedlineAccess().AppendRedline( pRedl, true );
     }
 
     SetTxtFmtColl( aPam, GetTxtCollFromPool( nPoolId ) );
@@ -1760,7 +1760,7 @@ void SwDoc::SetFmtItemByAutoFmt( const SwPaM& rPam, const SfxItemSet& rSet )
     SwTxtNode* pTNd = rPam.GetPoint()->nNode.GetNode().GetTxtNode();
     assert(pTNd);
 
-    RedlineMode_t eOld = GetRedlineMode();
+    RedlineMode_t eOld = getIDocumentRedlineAccess().GetRedlineMode();
 
     if (mbIsAutoFmtRedline)
     {
@@ -1776,9 +1776,9 @@ void SwDoc::SetFmtItemByAutoFmt( const SwPaM& rPam, const SfxItemSet& rSet )
         pRedl->SetExtraData( &aExtraData );
 
         //TODO: Undo is still missing!
-        AppendRedline( pRedl, true );
+        getIDocumentRedlineAccess().AppendRedline( pRedl, true );
 
-        SetRedlineMode_intern( (RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
+        getIDocumentRedlineAccess().SetRedlineMode_intern( (RedlineMode_t)(eOld | nsRedlineMode_t::REDLINE_IGNORE));
     }
 
     const sal_Int32 nEnd(rPam.End()->nContent.GetIndex());
@@ -1806,7 +1806,7 @@ void SwDoc::SetFmtItemByAutoFmt( const SwPaM& rPam, const SfxItemSet& rSet )
     endPam.SetMark();
     getIDocumentContentOperations().InsertItemSet(endPam, currentSet, nsSetAttrMode::SETATTR_DEFAULT);
 
-    SetRedlineMode_intern( eOld );
+    getIDocumentRedlineAccess().SetRedlineMode_intern( eOld );
 }
 
 void SwDoc::ChgFmt(SwFmt & rFmt, const SfxItemSet & rSet)
