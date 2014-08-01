@@ -102,6 +102,7 @@
 #include <IDocumentRedlineAccess.hxx>
 #include <IDocumentFieldsAccess.hxx>
 #include <IDocumentStatistics.hxx>
+#include <IDocumentState.hxx>
 #include <editeng/forbiddencharacterstable.hxx>
 #include <svl/zforlist.hxx>
 #include <drawdoc.hxx>
@@ -3954,7 +3955,7 @@ void SwXDocumentPropertyHelper::Invalidate()
 void SwXDocumentPropertyHelper::onChange()
 {
     if(m_pDoc)
-       m_pDoc->SetModified();
+       m_pDoc->getIDocumentState().SetModified();
 }
 
 SwViewOptionAdjust_Impl::SwViewOptionAdjust_Impl(
