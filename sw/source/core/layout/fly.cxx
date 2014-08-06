@@ -60,6 +60,7 @@
 #include <vcl/svapp.hxx>
 #include "switerator.hxx"
 #include <IDocumentSettingAccess.hxx>
+#include <IDocumentLayoutAccess.hxx>
 #include <textboxhelper.hxx>
 #include <txtfly.hxx>
 
@@ -1387,7 +1388,7 @@ void CalcCntnt( SwLayoutFrm *pLay,
                 if( pSect->IsEndnAtEnd() )
                 {
                     if( bCollect )
-                        pLay->GetFmt()->GetDoc()->GetLayouter()->
+                        pLay->GetFmt()->GetDoc()->getIDocumentLayoutAccess().GetLayouter()->
                             InsertEndnotes( pSect );
                     bool bLock = pSect->IsFtnLock();
                     pSect->SetFtnLock( true );
@@ -1642,7 +1643,7 @@ void CalcCntnt( SwLayoutFrm *pLay,
         {
             if( bCollect )
             {
-                pLay->GetFmt()->GetDoc()->GetLayouter()->InsertEndnotes(pSect);
+                pLay->GetFmt()->GetDoc()->getIDocumentLayoutAccess().GetLayouter()->InsertEndnotes(pSect);
                 pSect->CalcFtnCntnt();
             }
             if( pSect->HasFollow() )

@@ -38,6 +38,7 @@
 #include <unotxdoc.hxx>
 #include <docsh.hxx>
 #include <doc.hxx>
+#include <IDocumentLayoutAccess.hxx>
 #include <rootfrm.hxx>
 
 using namespace css;
@@ -293,7 +294,7 @@ private:
         SwXTextDocument* pTxtDoc = dynamic_cast<SwXTextDocument *>(mxComponent.get());
         CPPUNIT_ASSERT(pTxtDoc);
         SwDoc* pDoc = pTxtDoc->GetDocShell()->GetDoc();
-        SwRootFrm* pLayout = pDoc->GetCurrentLayout();
+        SwRootFrm* pLayout = pDoc->getIDocumentLayoutAccess().GetCurrentLayout();
         pLayout->dumpAsXml(pXmlWriter);
 
         // delete xml writer
@@ -306,7 +307,7 @@ private:
         SwXTextDocument* pTxtDoc = dynamic_cast<SwXTextDocument *>(mxComponent.get());
         CPPUNIT_ASSERT(pTxtDoc);
         SwDoc* pDoc = pTxtDoc->GetDocShell()->GetDoc();
-        pDoc->GetCurrentViewShell()->CalcLayout();
+        pDoc->getIDocumentLayoutAccess().GetCurrentViewShell()->CalcLayout();
     }
 
 protected:
